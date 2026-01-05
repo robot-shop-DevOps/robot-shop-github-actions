@@ -1,0 +1,160 @@
+name: PHP Microservices
+
+on:
+  workflow_call:
+    inputs:
+      MICROSERVICE:
+        required: true
+        type: string
+
+      IMAGE:
+        required: true
+        type: string
+
+      NAMESPACE:
+        required: true
+        type: string
+
+      RELEASE:
+        required: true
+        type: string
+
+      WORKING_DIR:
+        required: true
+        type: string
+
+      DOCKERFILE_PATH:
+        required: true
+        type: string
+
+
+env:
+  REGISTRY_NAME: robotshopdevacr
+  REGISTRY_URL: robotshopdevacr.azurecr.io
+
+
+jobs:
+  test:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: "8.3"
+        extensions: mbstring, curl, pdo_mysql
+        coverage: none
+
+    - name: Cache Composer packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.composer/cache/files
+        key: composer-${{ hashFiles(format('{0}/composer.lock', inputs.WORKING_DIR)) }}
+        restore-keys: composer-
+
+    - name: Composer install
+      working-directory: ${{ inputs.WORKING_DIR }}
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Run PHPUnit tests
+      working-directory: ${{ inputs.WORKING_DIR }}
+      run: |
+        mkdir -p test-results
+        vendor/bin/phpunit --testdox --log-junit test-results/junit.xml
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ inputs.MICROSERVICE }}-test-results
+        path: ${{ inputs.WORKING_DIR }}/test-results
+
+  build:
+    runs-on: robot-shop-runner-azure-dev
+    needs: test
+    outputs:
+      IMAGE_TAG: ${{ steps.version.outputs.IMAGE_TAG }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+      
+    - name: Get latest image tag
+      id: version
+      run: |
+        branch_name=$(echo "$GITHUB_REF_NAME" | tr '/' '-')
+        image_tag="$branch_name-${GITHUB_SHA::8}"
+        echo "IMAGE_TAG=$image_tag" >> $GITHUB_OUTPUT
+
+    - name: Log in to ACR with Buildah
+      run: |
+        az login --service-principal -u ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }} -p ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+        az account set --subscription ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
+        Token=$(az acr login --name ${{ env.REGISTRY_NAME }} --expose-token --output json | jq -r '.accessToken')   
+        buildah login ${{ env.REGISTRY_URL }} -u 00000000-0000-0000-0000-000000000000 -p $Token 
+
+    - name: Build image with Buildah
+      run: |
+        buildah build -t ${{ inputs.IMAGE }} ${{ inputs.DOCKERFILE_PATH }}
+        buildah tag ${{ inputs.IMAGE }} ${{ env.REGISTRY_URL }}/robot-shop/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}
+
+    - name: Push image with Buildah
+      run: |
+        buildah push ${{ env.REGISTRY_URL }}/robot-shop/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}
+
+  deploy:
+    if: ${{ github.ref_name == 'develop' }}
+    needs: build
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v4.3.0
+      with:
+        version: 3.9.0
+
+    - name: Find project namespace
+      run: |
+        if kubectl get ns ${{ inputs.NAMESPACE }} > /dev/null; then
+          echo "namespace_found=true" >> $GITHUB_ENV
+        else
+          echo "namespace_found=false" >> $GITHUB_ENV
+        fi
+
+    - name: Create project namespace
+      if: ${{ env.namespace_found != 'true'}}
+      run: |
+        set -e
+        if kubectl create ns ${{ inputs.NAMESPACE }} > /dev/null; then
+          echo "Namespace ${{ inputs.NAMESPACE }} created."
+        else
+          echo "Namespace ${{ inputs.NAMESPACE }} failed to create."
+        fi
+
+    - name: Validate helm charts
+      id: helmcharts
+      run: |
+        chart_path=$(find . -type d -name ".chart" -print -quit)
+        if [ -z $chart_path ]; then
+          echo "Error: Helm chart directory not found"
+          exit 1
+        fi
+        
+        echo "chart_path=$chart_path" >> $GITHUB_ENV
+        cd $chart_path
+        helm lint
+
+    - name: Deploy with helm
+      run: |
+        helm upgrade ${{ inputs.RELEASE }} ${{ env.chart_path }} \
+        -f ${{ env.chart_path }}/values.yaml -f ${{ env.chart_path }}/values/values_dev.yaml \
+        --namespace ${{ inputs.NAMESPACE }} --install --atomic \
+        --set deployment.pod.containers[0].image="${{ env.REGISTRY_URL }}/robot-shop/${{ inputs.IMAGE }}:${{ needs.build.outputs.IMAGE_TAG }}"
+
+    - name: Verify deployment
+      run: | 
+        kubectl rollout status deployment/${{ inputs.RELEASE }} --namespace ${{ inputs.NAMESPACE }}
+        helm status ${{ inputs.RELEASE }} --namespace ${{ inputs.NAMESPACE }} --output table
