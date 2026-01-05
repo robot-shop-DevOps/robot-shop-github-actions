@@ -1,0 +1,100 @@
+name: Helm Chart Controllers
+
+on:
+  workflow_call:
+    inputs:
+      RELEASE_NAME:
+        required: true
+        type: string
+
+      NAMESPACE:
+        required: true
+        type: string
+
+      CHART_REPO_NAME:
+        required: true
+        type: string
+
+      CHART_REPO_URL:
+        required: true
+        type: string
+
+      CHART_NAME:
+        required: true
+        type: string
+
+      CHART_VERSION:
+        required: true
+        type: string
+
+      CHART_PATH:
+        required: true
+        type: string
+
+      VALUES_FILES:
+        required: true
+        type: string
+        description: "Space-separated list of values files"
+
+
+env:
+  HELM_VERSION: 3.9.0
+
+
+jobs:
+  validate:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Helm lint
+        run: |
+          cd ${{ inputs.CHART_PATH }}
+          helm lint
+
+  deploy:
+    if: ${{ github.ref_name == 'develop' }}
+    needs: validate
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: azure/setup-helm@v4.3.0
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Find project namespace
+        run: |
+          if kubectl get ns ${{ inputs.NAMESPACE }} > /dev/null; then
+            echo "namespace_found=true" >> $GITHUB_ENV
+          else
+            echo "namespace_found=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create project namespace
+        if: ${{ env.namespace_found != 'true'}}
+        run: |
+          set -e
+          if kubectl create ns ${{ inputs.NAMESPACE }} > /dev/null; then
+            echo "Namespace ${{ inputs.NAMESPACE }} created."
+          else
+            echo "Namespace ${{ inputs.NAMESPACE }} failed to create."
+          fi
+
+      - name: Add Helm repo
+        run: |
+          helm repo add ${{ inputs.CHART_REPO_NAME }} ${{ inputs.CHART_REPO_URL }}
+          helm repo update
+
+      - name: Deploy Helm chart
+        run: |
+          helm upgrade ${{ inputs.RELEASE_NAME }} \
+            ${{ inputs.CHART_REPO_NAME }}/${{ inputs.CHART_NAME }} \
+            --NAMESPACE ${{ inputs.NAMESPACE }} \
+            --install \
+            --version ${{ inputs.CHART_VERSION }} \
+            $(for f in ${{ inputs.VALUES_FILES }}; do echo "-f $f"; done)
