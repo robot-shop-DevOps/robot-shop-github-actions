@@ -1,0 +1,72 @@
+name: Static Sites
+
+on:
+  workflow_call:
+    inputs:
+      WORKING_DIR:
+        required: true
+        type: string
+
+
+env:
+  AZURE_STORAGE_ACCOUNT: "robotshopdevweb"
+  AZURE_STORAGE_CONTAINER: "static"
+
+jobs:
+  validate:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v6
+
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install linters
+      run: |
+        npm install -g eslint
+        npm install -g stylelint stylelint-config-standard
+        npm install -g htmlhint
+
+    - name: Lint HTML files
+      working-directory: ${{ inputs.WORKING_DIR }}
+      run: |
+        htmlhint ./**/*.html
+
+    - name: Lint CSS files
+      working-directory: ${{ inputs.WORKING_DIR }}
+      run: |
+        stylelint ./**/*.css --config .stylelintrc.json
+
+    - name: Lint JavaScript files
+      working-directory: ${{ inputs.WORKING_DIR }}
+      run: |
+        eslint ./**/*.js --quiet
+
+
+  push:
+    if: ${{ github.ref_name == 'develop' }}
+    needs: validate
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v6
+
+    - name: Login to Azure CLI
+      run: |
+        az login --service-principal \
+        --username ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_AZURE_STORAGE }} \
+        --password ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_AZURE_STORAGE }} \
+        --tenant ${{ secrets.AZURE_TENANT_ID }}
+        az account set --subscription ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
+
+    - name: Push Static Files to Azure Storage
+      run: |
+        az storage blob upload-batch \
+        --account-name ${{ env.AZURE_STORAGE_ACCOUNT }} \
+        --destination ${{ env.AZURE_STORAGE_CONTAINER }} \
+        --source ${{ inputs.WORKING_DIR }} \
+        --overwrite \
+        --auth-mode login
