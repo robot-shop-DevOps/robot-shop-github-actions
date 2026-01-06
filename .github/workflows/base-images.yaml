@@ -1,0 +1,108 @@
+name: Base Images
+
+on:
+  workflow_call:
+    inputs:
+      IMAGE:
+        required: true
+        type: string   
+
+      REGISTRY:
+        required: true
+        type: string
+
+      SOURCE_TAG:
+        required: true
+        type: string
+
+      TARGET_TAG:
+        required: true
+        type: string
+
+      ENVIRONMENT:
+        required: true
+        type: string
+
+env:
+  ACR_REGISTRY_URL: robotshopdevacr.azurecr.io
+
+jobs:
+  sync-image:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+      - name: Set Azure Credentials   
+        run: |
+            if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
+            echo "Using dev environment"
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
+            echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+            elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
+            echo "Using prod environment"
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
+            echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+            fi
+
+            echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+            echo "Configured Azure creds"
+
+      - name: Log in to ACR with Buildah
+        run: |
+          buildah login ${{ env.ACR_REGISTRY_URL }} \
+          -u ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }} \
+          -p ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }} 
+
+      - name: Generate full image
+        run: |
+          IMAGE="${{ inputs.IMAGE }}"
+          REGISTRY="${{ inputs.REGISTRY }}"
+
+          if [[ "$REGISTRY" == "docker.io" || "$REGISTRY" == "quay.io" || "$REGISTRY" == "registry.k8s.io" ]]; then
+              if [[ "$IMAGE" == *"/"* ]]; then
+                  FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              else
+                  FULL_IMAGE="${REGISTRY}/library/${IMAGE}"
+              fi
+          else
+              if [[ "$IMAGE" != *"/"* ]]; then
+                  echo "ERROR: Registry $REGISTRY requires explicit namespace for image '$IMAGE'."
+                  exit 1
+              fi
+              FULL_IMAGE="${REGISTRY}/${IMAGE}"
+          fi
+
+          echo "FULL_IMAGE=$FULL_IMAGE" >> $GITHUB_ENV
+
+      - name: Pull Image from Registry
+        run: |
+          SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
+
+          echo "Pulling image from Registry: ${{ env.FULL_IMAGE }}:${SOURCE_TAG}"
+          buildah pull "${{ env.FULL_IMAGE }}:${SOURCE_TAG}"
+
+      - name: Tag and push to ACR
+        run: |
+          IMAGE="${{ inputs.IMAGE }}"
+          SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
+          TARGET_TAG="${{ inputs.TARGET_TAG }}"
+          ACR_IMAGE="${{ env.ACR_REGISTRY_URL }}/baseimages/${IMAGE}:${TARGET_TAG}"
+
+          echo "Retagging ${{ env.FULL_IMAGE }}:${SOURCE_TAG} -> ${ACR_IMAGE}"
+          buildah tag "${{ env.FULL_IMAGE }}:${SOURCE_TAG}" "${ACR_IMAGE}"
+
+          echo "Pushing ${ACR_IMAGE} to ACR"
+          buildah push "${ACR_IMAGE}"
+
+      - name: Delete Local Images
+        run: |
+          IMAGE="${{ inputs.IMAGE }}"
+          SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
+          TARGET_TAG="${{ inputs.TARGET_TAG }}"
+          ACR_IMAGE="${{ env.ACR_REGISTRY_URL }}/baseimages/${IMAGE}:${TARGET_TAG}"
+
+          echo "Deleting local images to free up space"
+          buildah rmi "${{ env.FULL_IMAGE }}:${SOURCE_TAG}"
+          buildah rmi "${ACR_IMAGE}"
