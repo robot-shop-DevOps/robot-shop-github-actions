@@ -1,0 +1,119 @@
+name: Terraform
+
+on:
+  workflow_call:
+    inputs:
+      CLOUD_PROVIDER:
+        required: true
+        type: string
+
+      ENVIRONMENT:
+        required: true
+        type: string
+
+      UPDATE_LOCK_FILE:
+        required: false
+        default: false
+        type: boolean
+
+      FORCE_UNLOCK:
+        required: false
+        type: string
+
+      DEPLOY:
+        required: true
+        type: boolean
+
+env:
+  TF_VERSION: '1.9.8'
+
+jobs:
+  terraform:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v6
+
+    - name: Set AWS Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'aws' }}
+      run: |
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+        echo "Configured AWS creds"
+
+    - name: Set Azure Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'azure' }}     
+      run: |
+        if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
+          echo "Using dev ENVIRONMENT"
+          echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+        elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
+          echo "Using prod ENVIRONMENT"
+          echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+        fi
+
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "Configured Azure creds"
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Terraform Init
+      if : ${{ inputs.UPDATE_LOCK_FILE == false }}
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: |
+        terraform init
+
+    - name: Terraform Init with Lock File Update
+      if : ${{ inputs.UPDATE_LOCK_FILE == true }}
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: |
+        terraform init -upgrade
+      
+    - name: Push lock file to repo
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git add .terraform.lock.hcl
+        git commit -m "Updated Terraform lock file" || echo "No changes to commit"
+        git push || echo "No changes to push"
+      
+    - name: Terraform Validate
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: terraform validate
+      
+    - name: Terraform Force Unlock
+      if: ${{ inputs.FORCE_UNLOCK != '' }}
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: |
+        terraform force-unlock -force ${{ inputs.FORCE_UNLOCK }}  
+
+    - name: Terraform Plan
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: |
+        terraform plan -var-file=${{ inputs.ENVIRONMENT }}.tfvars -out=tfplan
+
+    - name: Upload Terraform Plan
+      uses: actions/upload-artifact@v4
+      with:
+        name: tfplan
+        path: ${{ inputs.CLOUD_PROVIDER }}//${{ inputs.ENVIRONMENT }}/tfplan
+
+    - name: Terraform Apply
+      if: ${{ inputs.DEPLOY == true && github.ref_name == 'main'}}
+      working-directory: ${{ inputs.CLOUD_PROVIDER }}/${{ inputs.ENVIRONMENT }}
+      run: terraform apply -auto-approve tfplan
