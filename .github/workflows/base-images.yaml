@@ -49,11 +49,26 @@ jobs:
             echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
             echo "Configured Azure creds"
 
-      - name: Log in to ACR with Buildah
+      - name: Login to ACR with Buildah
         run: |
-          buildah login ${{ env.ACR_REGISTRY_URL }} \
-          -u ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }} \
-          -p ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }} 
+          set -e
+
+          az login --service-principal \
+            -u "$ARM_CLIENT_ID" \
+            -p "$ARM_CLIENT_SECRET" \
+            --tenant "$ARM_TENANT_ID"
+
+          az account set --subscription "$ARM_SUBSCRIPTION_ID"
+
+          TOKEN=$(az acr login \
+            --name "${ACR_REGISTRY_URL%%.*}" \
+            --expose-token \
+            --output tsv \
+            --query accessToken)
+
+          buildah login "$ACR_REGISTRY_URL" \
+            -u 00000000-0000-0000-0000-000000000000 \
+            -p "$TOKEN"
 
       - name: Generate full image
         run: |
