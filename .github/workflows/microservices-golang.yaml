@@ -55,7 +55,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v6
       with:
-        name: ${{ inputs.WORKING_DIR }}-test-results
+        name: ${{ inputs.MICROSERVICE }}-test-results
         path: ${{ inputs.WORKING_DIR }}/test-results
 
   build:
