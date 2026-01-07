@@ -107,7 +107,7 @@ jobs:
       run: |
         helm upgrade ${{ inputs.RELEASE }} ${{ env.chart_path }} \
         -f ${{ env.chart_path }}/values.yaml -f ${{ env.chart_path }}/values/values_dev.yaml \
-        --namespace ${{ env.NAMESPACE }} --install --atomic \
+        --namespace ${{ inputs.NAMESPACE }} --install --atomic \
         $(for paths in ${{ inputs.IMAGE_OVERRIDE_PATHS }}; 
           do echo "--set $paths=${{ env.REGISTRY_URL }}/robot-shop/${{ inputs.IMAGE }}:${{ needs.build.outputs.IMAGE_TAG }}"; 
         done)
