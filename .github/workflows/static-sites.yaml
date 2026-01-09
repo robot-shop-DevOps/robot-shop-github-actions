@@ -7,6 +7,10 @@ on:
         required: true
         type: string
 
+      UPLOAD_DIR:
+        required: true
+        type: string
+
 
 env:
   AZURE_STORAGE_ACCOUNT: "robotshopdevweb"
@@ -67,6 +71,6 @@ jobs:
         az storage blob upload-batch \
         --account-name ${{ env.AZURE_STORAGE_ACCOUNT }} \
         --destination ${{ env.AZURE_STORAGE_CONTAINER }} \
-        --source ${{ inputs.WORKING_DIR }} \
+        --source ${{ inputs.UPLOAD_DIR }} \
         --overwrite \
         --auth-mode login
