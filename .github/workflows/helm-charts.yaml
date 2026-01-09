@@ -94,7 +94,7 @@ jobs:
         run: |
           helm upgrade ${{ inputs.RELEASE_NAME }} \
             ${{ inputs.CHART_REPO_NAME }}/${{ inputs.CHART_NAME }} \
-            --NAMESPACE ${{ inputs.NAMESPACE }} \
+            --namespace ${{ inputs.NAMESPACE }} \
             --install \
             --version ${{ inputs.CHART_VERSION }} \
             $(for f in ${{ inputs.VALUES_FILES }}; do echo "-f $f"; done)
