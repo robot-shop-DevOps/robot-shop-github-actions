@@ -1,0 +1,75 @@
+name: Ansible Playbooks
+
+on:
+  workflow_call:
+    inputs:
+      WORKING_DIR:
+        required: true
+        type: string
+      
+      INVENTORY_DIR:
+        required: true
+        type: string
+
+      PLAYBOOK_PATH:
+        required: true
+        type: string
+
+      ANSIBLE_COMMAND:
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Create virtual environment
+      run: python -m venv venv
+
+    - name: Install dependencies
+      run: |
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install ansible-lint
+
+    - name: Lint ansible playbooks
+      run: |
+        set -e
+        source venv/bin/activate
+        ansible-lint ${{ inputs.WORKING_DIR }}
+
+  dry-run-playbooks:
+    needs: validate
+    runs-on: robot-shop-runner-azure-dev
+    if: ${{ inputs.ANSIBLE_COMMAND == 'dry_run'}}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Dry run ansible playbooks
+      run: |
+        ansible-playbook -i ${{ inputs.INVENTORY_DIR }} \
+        ${{ inputs.PLAYBOOK_PATH }} \
+        --check --diff
+        
+  run-playbooks:
+    needs: validate
+    runs-on: robot-shop-runner-azure-dev
+    if: ${{ github.ref_name == 'develop' && inputs.ANSIBLE_COMMAND == 'run' }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Run playbooks
+      run: |
+        echo "Running playbook ${{ inputs.PLAYBOOK_PATH }}"
+        ansible-playbook -i ${{ inputs.INVENTORY_DIR }} \
+        ${{ inputs.PLAYBOOK_PATH }}
