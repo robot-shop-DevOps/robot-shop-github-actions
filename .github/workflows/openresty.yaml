@@ -31,11 +31,6 @@ jobs:
           scp -o StrictHostKeyChecking=no -r ${{ inputs.LUA_DIR }}/* \
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/home/WebServer/openresty-tmp/lua/
 
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" \
-          ssh -o StrictHostKeyChecking=no \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-          sudo cp -r /home/WebServer/openresty-tmp/lua/* /usr/local/openresty/nginx/conf/tmp/lua/
-
       - name: Validate openresty configuration
         run: |
           set -e
@@ -47,15 +42,10 @@ jobs:
           sshpass -p "${{ secrets.SERVER_PASSWORD }}" \
           ssh -o StrictHostKeyChecking=no \
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-          sudo cp -r /home/WebServer/openresty-tmp/nginx/* /usr/local/openresty/nginx/conf/tmp/nginx/
-
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" \
-          ssh -o StrictHostKeyChecking=no \
-          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
           "sudo sed -i \
-          's|env LUA_DIR=/usr/local/openresty/nginx/conf/lua|env LUA_DIR=/usr/local/openresty/nginx/conf/tmp/lua|' \
-          /usr/local/openresty/nginx/conf/tmp/nginx/nginx.conf \
-          && sudo /usr/bin/openresty -t -c /usr/local/openresty/nginx/conf/tmp/nginx/nginx.conf"
+          's|env LUA_DIR=/usr/local/openresty/nginx/conf/lua|env LUA_DIR=/home/WebServer/openresty-tmp/lua|' \
+          /home/WebServer/openresty-tmp/nginx/nginx.conf \
+          && sudo /usr/bin/openresty -t -c /home/WebServer/openresty-tmp/nginx/nginx.conf"
           
   deploy:
     if: ${{ github.ref_name == 'develop' }}
