@@ -71,7 +71,10 @@ jobs:
           sshpass -p "${{ secrets.SERVER_PASSWORD }}" \
           ssh -o StrictHostKeyChecking=no \
           ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} \
-          sudo cp -r /home/WebServer/openresty-tmp/nginx/* /usr/local/openresty/nginx/conf/
+          "sudo sed -i \
+          's|env LUA_DIR=/home/WebServer/openresty-tmp/lua|env LUA_DIR=/usr/local/openresty/nginx/conf/lua/|' \
+          /home/WebServer/openresty-tmp/nginx/nginx.conf
+          && sudo cp -r /home/WebServer/openresty-tmp/nginx/* /usr/local/openresty/nginx/conf/"
 
       - name: Reload openresty configuration on server
         run: |
