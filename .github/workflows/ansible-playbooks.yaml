@@ -15,6 +15,21 @@ on:
         required: true
         type: string
 
+      REQUIREMENTS_FILE_PATH:
+        required: false
+        type: string
+        default: ''
+
+      ANSIBLE_GALAXY_COLLECTIONS_PATH:
+        required: false
+        type: string
+        default: ./collections
+
+      ANSIBLE_GALAXY_ROLES_PATH:
+        required: false
+        type: string
+        default: ./roles
+
       ANSIBLE_COMMAND:
         required: true
         type: string
@@ -54,6 +69,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
+    - name: Install Ansible Galaxy dependencies
+      if: ${{ inputs.REQUIREMENTS_FILE_PATH  != '' }}
+      run: |
+        ansible-galaxy collection install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_COLLECTIONS_PATH }}
+        ansible-galaxy role install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_ROLES_PATH }}
+
     - name: Dry run ansible playbooks
       run: |
         ansible-playbook -i ${{ inputs.INVENTORY_DIR }} \
@@ -67,6 +88,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+
+    - name: Install Ansible Galaxy dependencies
+      if: ${{ inputs.REQUIREMENTS_FILE_PATH  != '' }}
+      run: |
+        ansible-galaxy collection install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_COLLECTIONS_PATH }}
+        ansible-galaxy role install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_ROLES_PATH }}
 
     - name: Run playbooks
       run: |
