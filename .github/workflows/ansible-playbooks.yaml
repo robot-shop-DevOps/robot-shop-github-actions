@@ -3,36 +3,22 @@ name: Ansible Playbooks
 on:
   workflow_call:
     inputs:
-      WORKING_DIR:
-        required: true
-        type: string
-      
-      INVENTORY_DIR:
+      ENVIRONMENT:
         required: true
         type: string
 
-      PLAYBOOK_PATH:
+      PLAYBOOK:
         required: true
         type: string
-
-      REQUIREMENTS_FILE_PATH:
-        required: false
-        type: string
-        default: ''
-
-      ANSIBLE_GALAXY_COLLECTIONS_PATH:
-        required: false
-        type: string
-        default: ./collections
-
-      ANSIBLE_GALAXY_ROLES_PATH:
-        required: false
-        type: string
-        default: ./roles
 
       ANSIBLE_COMMAND:
         required: true
         type: string
+
+env:
+  INVENTORY_DIR: ./inventories
+  PLAYBOOK_DIR: ./playbooks
+  ANSIBLE_LINT_CONFIG_PATH: ./ansible-lint.yaml
 
 jobs:
   validate:
@@ -59,7 +45,7 @@ jobs:
       run: |
         set -e
         source venv/bin/activate
-        ansible-lint ${{ inputs.WORKING_DIR }}
+        ansible-lint -c ${{ env.ANSIBLE_LINT_CONFIG_PATH }} ${{ env.PLAYBOOK_DIR }}
 
   dry-run-playbooks:
     needs: validate
@@ -70,15 +56,22 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Install Ansible Galaxy dependencies
-      if: ${{ inputs.REQUIREMENTS_FILE_PATH  != '' }}
       run: |
-        ansible-galaxy collection install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_COLLECTIONS_PATH }}
-        ansible-galaxy role install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_ROLES_PATH }}
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing ansible galaxy dependencies from $file_path"
+          ansible-galaxy collection install -r "$file_path" -p ./collections
+          ansible-galaxy role install -r "$file_path" -p ./roles
+        else
+          echo "No $file_path file found, skipping."
+        fi
 
     - name: Dry run ansible playbooks
       run: |
-        ansible-playbook -i ${{ inputs.INVENTORY_DIR }} \
-        ${{ inputs.PLAYBOOK_PATH }} \
+        echo "Dry Running playbook ${{ inputs.PLAYBOOK }}"
+        ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
+        ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         --check --diff
         
   run-playbooks:
@@ -90,13 +83,19 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Install Ansible Galaxy dependencies
-      if: ${{ inputs.REQUIREMENTS_FILE_PATH  != '' }}
       run: |
-        ansible-galaxy collection install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_COLLECTIONS_PATH }}
-        ansible-galaxy role install -r ${{ inputs.REQUIREMENTS_FILE_PATH }} -p ${{ inputs.ANSIBLE_GALAXY_ROLES_PATH }}
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing ansible galaxy dependencies from $file_path"
+          ansible-galaxy collection install -r "$file_path" -p ./collections
+          ansible-galaxy role install -r "$file_path" -p ./roles
+        else
+          echo "No $file_path file found, skipping."
+        fi
 
     - name: Run playbooks
       run: |
-        echo "Running playbook ${{ inputs.PLAYBOOK_PATH }}"
-        ansible-playbook -i ${{ inputs.INVENTORY_DIR }} \
-        ${{ inputs.PLAYBOOK_PATH }}
+        echo "Running playbook ${{ inputs.PLAYBOOK }}"
+        ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
+        ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml
