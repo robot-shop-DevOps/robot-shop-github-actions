@@ -41,6 +41,18 @@ jobs:
         pip install --upgrade pip
         pip install ansible-lint
 
+    - name: Install Ansible Galaxy dependencies
+      run: |
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing ansible galaxy dependencies from $file_path"
+          ansible-galaxy collection install -r "$file_path" -p ./collections
+          ansible-galaxy role install -r "$file_path" -p ./roles
+        else
+          echo "No $file_path file found, skipping."
+        fi
+
     - name: Lint ansible playbooks
       run: |
         set -e
@@ -54,18 +66,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-
-    - name: Install Ansible Galaxy dependencies
-      run: |
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing ansible galaxy dependencies from $file_path"
-          ansible-galaxy collection install -r "$file_path" -p ./collections
-          ansible-galaxy role install -r "$file_path" -p ./roles
-        else
-          echo "No $file_path file found, skipping."
-        fi
 
     - name: Dry run ansible playbooks
       run: |
@@ -81,18 +81,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
-
-    - name: Install Ansible Galaxy dependencies
-      run: |
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing ansible galaxy dependencies from $file_path"
-          ansible-galaxy collection install -r "$file_path" -p ./collections
-          ansible-galaxy role install -r "$file_path" -p ./roles
-        else
-          echo "No $file_path file found, skipping."
-        fi
 
     - name: Run playbooks
       run: |
