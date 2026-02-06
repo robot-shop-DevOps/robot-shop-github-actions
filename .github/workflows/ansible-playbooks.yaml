@@ -18,7 +18,7 @@ on:
 env:
   INVENTORY_DIR: ./inventories
   PLAYBOOK_DIR: ./playbooks
-  ANSIBLE_LINT_CONFIG_PATH: ./ansible-lint.yaml
+  ANSIBLE_LINT_CONFIG_PATH: ./.ansible-lint.yaml
 
 jobs:
   validate:
