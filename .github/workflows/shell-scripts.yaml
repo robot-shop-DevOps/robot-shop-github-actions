@@ -1,0 +1,70 @@
+name: Shell Scripts
+
+on:
+  workflow_dispatch:
+    inputs:
+      CLOUD_PROVIDER:
+        required: true
+        type: string
+
+      ENVIRONMENT:
+        required: true
+        type: string
+
+      SCRIPT_PATH:
+        required: true
+        type: string
+
+      EXTRA_ENV_VARS:
+        required: false
+        type: string
+        description: "env vars the script expects. Pass name=value. Use | for seperation of multiple pairs"
+
+jobs:
+  shell_script:
+    runs-on: robot-shop-runner-azure-dev
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v6
+
+    - name: Set AWS Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'aws' }}
+      run: |
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+        echo "Configured AWS creds"
+
+    - name: Set Azure Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'azure' }}     
+      run: |
+        if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
+          echo "Using dev ENVIRONMENT"
+          echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+        elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
+          echo "Using prod ENVIRONMENT"
+          echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+        fi
+
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "Configured Azure creds"
+
+    - name: Export extra environment variables
+      if: ${{ inputs.EXTRA_ENV_VARS != '' }}
+      run: |
+        set -e
+
+        IFS='|' read -r var <<< ${{ inputs.EXTRA_ENV_VARS }}
+            export var
+
+    - name: Run shell script
+      if: ${{ github.ref_name == 'develop' }}
+      run: |
+        set -e
+        chmod 700 ${{ inputs.SCRIPT_PATH }}
+        ${{ inputs.SCRIPT_PATH }}
