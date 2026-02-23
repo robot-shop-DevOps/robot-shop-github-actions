@@ -1,7 +1,7 @@
 name: Shell Scripts
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       CLOUD_PROVIDER:
         required: true
