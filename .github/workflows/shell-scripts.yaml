@@ -58,9 +58,12 @@ jobs:
       if: ${{ inputs.EXTRA_ENV_VARS != '' }}
       run: |
         set -e
+        IFS='|'
 
-        IFS='|' read -r var <<< ${{ inputs.EXTRA_ENV_VARS }}
-            export var
+        read -r var <<< ${{ inputs.EXTRA_ENV_VARS }}
+          for v in "${var[@]}"; do
+              echo "$v" >> $GITHUB_ENV
+          done
 
     - name: Run shell script
       if: ${{ github.ref_name == 'develop' }}
