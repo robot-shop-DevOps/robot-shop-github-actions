@@ -3,6 +3,10 @@ name: Ansible Playbooks
 on:
   workflow_call:
     inputs:
+      CLOUD_PROVIDER:
+        required: true
+        type: string
+  
       ENVIRONMENT:
         required: true
         type: string
