@@ -15,6 +15,16 @@ on:
         required: true
         type: string
 
+      ANSIBLE_EXTRA_ARGS:
+        required: false
+        type: string
+        default: ""
+      
+      ANSIBLE_VARS_FILE:
+        required: false
+        type: string
+        default: ""
+
 env:
   INVENTORY_DIR: ./inventories
   PLAYBOOK_DIR: ./playbooks
@@ -72,6 +82,8 @@ jobs:
         echo "Dry Running playbook ${{ inputs.PLAYBOOK }}"
         ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
+        ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
+        -e @${{ inputs.ANSIBLE_VARS_FILE }} \
         --check --diff
         
   run-playbooks:
@@ -86,4 +98,6 @@ jobs:
       run: |
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
         ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
-        ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml
+        ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
+        ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
+        -e @${{ inputs.ANSIBLE_VARS_FILE }}
