@@ -41,6 +41,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
+    - name: Setup Cloud Credentials
+      uses: ./.github/actions/setup-cloud-creds
+      with:
+        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_SERVICE: ansible
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -81,6 +88,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
+    - name: Setup Cloud Credentials
+      uses: ./.github/actions/setup-cloud-creds
+      with:
+        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_SERVICE: ansible
+
     - name: Dry run ansible playbooks
       run: |
         echo "Dry Running playbook ${{ inputs.PLAYBOOK }}"
@@ -97,6 +111,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
+
+    - name: Setup Cloud Credentials
+      uses: ./.github/actions/setup-cloud-creds
+      with:
+        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
+        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+        APP_SERVICE: ansible
 
     - name: Run playbooks
       run: |

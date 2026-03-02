@@ -30,45 +30,18 @@ jobs:
   sync-image:
     runs-on: robot-shop-runner-azure-dev
     steps:
-      - name: Set Azure Credentials   
-        run: |
-            if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
-            echo "Using dev environment"
-            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
-            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
-            echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+      - name: Setup Cloud Credentials
+        uses: ./.github/actions/setup-cloud-creds
+        with:
+          CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
+          ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+          APP_SERVICE: acr
 
-            elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
-            echo "Using prod environment"
-            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
-            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_PROD_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
-            echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_PROD_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-
-            fi
-
-            echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
-            echo "Configured Azure creds"
-
-      - name: Login to ACR with Buildah
-        run: |
-          set -e
-
-          az login --service-principal \
-            -u "$ARM_CLIENT_ID" \
-            -p "$ARM_CLIENT_SECRET" \
-            --tenant "$ARM_TENANT_ID"
-
-          az account set --subscription "$ARM_SUBSCRIPTION_ID"
-
-          TOKEN=$(az acr login \
-            --name "${ACR_REGISTRY_URL%%.*}" \
-            --expose-token \
-            --output tsv \
-            --query accessToken)
-
-          buildah login "$ACR_REGISTRY_URL" \
-            -u 00000000-0000-0000-0000-000000000000 \
-            -p "$TOKEN"
+      - name: Login to ACR with buildah
+        uses: ./.github/actions/acr-buildah-login
+        with:
+          REGISTRY_URL: ${{ env.ACR_REGISTRY_URL }}
+          REGISTRY_NAME: ${{ inputs.REGISTRY }}
 
       - name: Generate full image
         run: |

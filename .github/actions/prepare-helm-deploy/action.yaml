@@ -1,0 +1,39 @@
+name: Prepare Helm Deployment
+
+description: Ensure namespace exists and validate Helm chart
+
+inputs:
+  NAMESPACE:
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Ensure namespace exists
+      shell: bash
+      run: |
+        if kubectl get ns "${{ inputs.NAMESPACE }}" >/dev/null 2>&1; then
+          echo "Namespace exists"
+        else
+          kubectl create ns "${{ inputs.NAMESPACE }}"
+          echo "Namespace created"
+        fi
+
+    - name: Find Helm chart
+      shell: bash
+      run: |
+        chart_path=$(find . -type d -name ".chart" -print -quit)
+
+        if [ -z "$chart_path" ]; then
+          echo "Helm chart not found"
+          exit 1
+        fi
+
+        echo "chart_path=$chart_path" >> $GITHUB_ENV
+
+    - name: Lint Helm chart
+      shell: bash
+      run: |
+        cd "$chart_path"
+        helm lint

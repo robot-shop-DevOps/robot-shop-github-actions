@@ -1,0 +1,40 @@
+name: Login to ACR with Buildah
+
+description: Authenticate Buildah with Azure Container Registry
+
+inputs:
+  REGISTRY_URL:
+    description: ACR registry URL
+    required: true
+
+  REGISTRY_NAME:
+    description: ACR registry name
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Azure login
+      shell: bash
+      run: |
+        set -e
+
+        az login --service-principal \
+          -u "$ARM_CLIENT_ID" \
+          -p "$ARM_CLIENT_SECRET" \
+          --tenant "$ARM_TENANT_ID"
+
+        az account set --subscription "$ARM_SUBSCRIPTION_ID"
+
+    - name: Buildah login
+      shell: bash
+      run: |
+        TOKEN=$(az acr login \
+          --name "${REGISTRY_NAME}" \
+          --expose-token \
+          --output tsv \
+          --query accessToken)
+
+        buildah login "$REGISTRY_URL" \
+          -u 00000000-0000-0000-0000-000000000000 \
+          -p "$TOKEN"

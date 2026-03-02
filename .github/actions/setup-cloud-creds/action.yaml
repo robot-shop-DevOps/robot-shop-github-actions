@@ -1,0 +1,87 @@
+name: Setup Cloud Credentials
+
+description: Configure cloud credentials for different app services
+
+inputs:
+  CLOUD_PROVIDER:
+    description: Cloud provider (aws | azure)
+    required: true
+
+  ENVIRONMENT:
+    description: Environment (dev | prod)
+    required: true
+  
+  APP_SERVICE:
+    description: App service using the credentials
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Print inputs
+      shell: bash
+      run: |
+        echo "Cloud: ${{ inputs.CLOUD_PROVIDER }}"
+        echo "App service: ${{ inputs.APP_SERVICE }}"
+        echo "Environment: ${{ inputs.ENVIRONMENT }}"
+
+    - name: Set AWS Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'aws' }}
+      run: |
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+        echo "Configured AWS creds"
+
+    - name: Set Azure Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'azure' }}     
+      run: |
+        if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
+
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+          if [[ ${{ inputs.APP_SERVICE }} = "terraform" ]]; then  
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
+          fi
+
+          elif [[ ${{ inputs.APP_SERVICE }} = "ansible" ]]; then  
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
+          fi
+
+          elif [[ ${{ inputs.APP_SERVICE }} = "acr" ]]; then 
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
+          fi
+
+          elif [[ ${{ inputs.APP_SERVICE }} = "automation" ]]; then 
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_AUTOMATION }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_AUTOMATION }}" >> $GITHUB_ENV
+          fi
+
+          elif [[ ${{ inputs.APP_SERVICE }} = "storage" ]]; then 
+            echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_STORAGE }}" >> $GITHUB_ENV
+            echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_STORAGE }}" >> $GITHUB_ENV
+          fi
+
+        elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
+          echo "PROD not setup"
+        fi
+
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "Configured Azure creds"
+
+    - name: Set Azure IAM Credentials
+      if: ${{ inputs.CLOUD_PROVIDER == 'azure-iam' }}     
+      run: |
+        if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
+          echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM_IAM }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM_IAM }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+        elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
+          echo "PROD not setup"
+        fi
+
+        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "Configured Azure IAM creds"

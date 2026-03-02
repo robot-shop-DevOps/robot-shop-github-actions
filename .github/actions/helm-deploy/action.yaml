@@ -1,0 +1,52 @@
+name: Helm Deploy
+
+description: Deploy Helm chart and verify rollout
+
+inputs:
+  RELEASE:
+    required: true
+  NAMESPACE:
+    required: true
+  CHART_PATH:
+    required: true
+  IMAGE:
+    required: true
+  WORKLOAD_TYPE:
+    required: true
+  IMAGE_OVERRIDE_PATHS:
+    required: false
+  
+runs:
+  using: composite
+  steps:
+
+    - name: Deploy with helm
+      shell: bash
+      run: |
+        EXTRA_ARGS=""
+
+        if [ -n "${{ inputs.IMAGE_OVERRIDE_PATHS }}" ]; then
+          for path in ${{ inputs.IMAGE_OVERRIDE_PATHS }}; do
+            EXTRA_ARGS="$EXTRA_ARGS --set $path=${{ inputs.IMAGE }}"
+          done
+        else
+          EXTRA_ARGS="--set deployment.pod.containers[0].image=${{ inputs.IMAGE }}"
+        fi
+
+        helm upgrade "${{ inputs.RELEASE }}" "${{ inputs.CHART_PATH }}" \
+          --install \
+          --atomic \
+          --namespace "${{ inputs.NAMESPACE }}" \
+          -f "${{ inputs.CHART_PATH }}/values.yaml" \
+          -f "${{ inputs.CHART_PATH }}/values/values_dev.yaml" \
+          $EXTRA_ARGS
+
+    - name: Verify deployment
+      shell: bash
+      run: |
+        kubectl rollout status ${{ inputs.WORKLOAD_TYPE }}/${{ inputs.RELEASE }} \
+          --namespace "${{ inputs.NAMESPACE }}"
+
+        helm status "${{ inputs.RELEASE }}" \
+          --namespace "${{ inputs.NAMESPACE }}" \
+          --output table

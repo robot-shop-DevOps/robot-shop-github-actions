@@ -16,6 +16,7 @@ env:
   AZURE_STORAGE_ACCOUNT: "robotshopdevweb"
   AZURE_STORAGE_CONTAINER: "static"
 
+
 jobs:
   validate:
     runs-on: robot-shop-runner-azure-dev
@@ -58,13 +59,12 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v6
 
-    - name: Login to Azure CLI
-      run: |
-        az login --service-principal \
-        --username ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_AZURE_STORAGE }} \
-        --password ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_AZURE_STORAGE }} \
-        --tenant ${{ secrets.AZURE_TENANT_ID }}
-        az account set --subscription ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
+    - name: Setup Cloud Credentials
+      uses: ./.github/actions/setup-cloud-creds
+      with:
+        CLOUD_PROVIDER: azure
+        ENVIRONMENT: dev
+        APP_SERVICE: storage
 
     - name: Push Static Files to Azure Storage
       run: |
