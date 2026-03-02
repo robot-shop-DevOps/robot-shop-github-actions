@@ -1,0 +1,37 @@
+name: Build and Push Image with Buildah
+
+description: Build container image with Buildah and push to registry
+
+inputs:
+  IMAGE:
+    required: true
+  DOCKERFILE_PATH:
+    required: true
+  REGISTRY_URL:
+    required: true
+
+outputs:
+  IMAGE_TAG:
+    description: Generated image tag
+
+runs:
+  using: composite
+  steps:
+    - name: Get latest image tag
+      shell: bash
+      id: version
+      run: |
+        branch_name=$(echo "$GITHUB_REF_NAME" | tr '/' '-')
+        image_tag="$branch_name-${GITHUB_SHA::8}"
+        echo "IMAGE_TAG=$image_tag" >> $GITHUB_OUTPUT
+
+    - name: Build image with Buildah
+      shell: bash
+      run: |
+        buildah build -t ${{ inputs.IMAGE }} ${{ inputs.DOCKERFILE_PATH }}
+        buildah tag ${{ inputs.IMAGE }} ${{ inputs.REGISTRY_URL }}/robot-shop/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}
+
+    - name: Push image with Buildah
+      shell: bash
+      run: |
+        buildah push ${{ inputs.REGISTRY_URL }}/robot-shop/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}
