@@ -129,6 +129,11 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_SERVICE: ansible
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
     - name: Install dependencies
       run: |
         python3 -m pip install --upgrade pip
