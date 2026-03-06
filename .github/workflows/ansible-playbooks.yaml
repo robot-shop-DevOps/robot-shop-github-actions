@@ -55,6 +55,9 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        
         /usr/bin/python3 -m pip install --upgrade pip
         /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint
 
@@ -136,6 +139,9 @@ jobs:
 
     - name: Install dependencies
       run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        
         /usr/bin/python3 -m pip install --upgrade pip
         /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint
 
