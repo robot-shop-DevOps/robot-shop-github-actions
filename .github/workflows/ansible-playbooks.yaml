@@ -56,7 +56,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install ansible-lint
+        pip install "ansible[azure]" ansible-lint
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
