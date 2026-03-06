@@ -53,12 +53,8 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Create virtual environment
-      run: python -m venv venv
-
     - name: Install dependencies
       run: |
-        source venv/bin/activate
         pip install --upgrade pip
         pip install ansible-lint
 
