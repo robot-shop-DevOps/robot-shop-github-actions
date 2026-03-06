@@ -82,7 +82,6 @@ jobs:
     - name: Lint ansible playbooks
       run: |
         set -e
-        source venv/bin/activate
         ansible-lint -c ${{ env.ANSIBLE_LINT_CONFIG_PATH }} ${{ env.PLAYBOOK_DIR }}
 
   dry-run-playbooks:
