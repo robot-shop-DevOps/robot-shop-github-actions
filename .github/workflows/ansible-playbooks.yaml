@@ -42,7 +42,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Setup Cloud Credentials
-      uses: ./.github/actions/setup-cloud-creds
+      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
       with:
         CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
@@ -89,7 +89,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Setup Cloud Credentials
-      uses: ./.github/actions/setup-cloud-creds
+      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
       with:
         CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
@@ -98,10 +98,16 @@ jobs:
     - name: Dry run ansible playbooks
       run: |
         echo "Dry Running playbook ${{ inputs.PLAYBOOK }}"
+        
+        VARS_OPTION=""
+        if [[ -n "$VARS_FILE" ]]; then
+          VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
+        fi
+
         ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
-        -e @${{ inputs.ANSIBLE_VARS_FILE }} \
+        $VARS_OPTION \
         --check --diff
         
   run-playbooks:
@@ -113,7 +119,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Setup Cloud Credentials
-      uses: ./.github/actions/setup-cloud-creds
+      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
       with:
         CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
@@ -122,7 +128,13 @@ jobs:
     - name: Run playbooks
       run: |
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
+        
+        VARS_OPTION=""
+        if [[ -n "$VARS_FILE" ]]; then
+          VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
+        fi
+
         ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
-        -e @${{ inputs.ANSIBLE_VARS_FILE }}
+        $VARS_OPTION

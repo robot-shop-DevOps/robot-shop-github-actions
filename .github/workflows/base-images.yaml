@@ -31,14 +31,14 @@ jobs:
     runs-on: robot-shop-runner-azure-dev
     steps:
       - name: Setup Cloud Credentials
-        uses: ./.github/actions/setup-cloud-creds
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
         with:
           CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
           ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
           APP_SERVICE: acr
 
       - name: Login to ACR with buildah
-        uses: ./.github/actions/acr-buildah-login
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/acr-buildah-login@main
         with:
           REGISTRY_URL: ${{ env.ACR_REGISTRY_URL }}
           REGISTRY_NAME: ${{ inputs.REGISTRY }}
