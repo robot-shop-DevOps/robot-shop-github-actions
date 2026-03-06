@@ -100,7 +100,7 @@ jobs:
         echo "Dry Running playbook ${{ inputs.PLAYBOOK }}"
         
         VARS_OPTION=""
-        if [[ -n "$VARS_FILE" ]]; then
+        if [[ -n "${{ inputs.ANSIBLE_VARS_FILE }}" ]]; then
           VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
         fi
 
@@ -130,7 +130,7 @@ jobs:
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
         
         VARS_OPTION=""
-        if [[ -n "$VARS_FILE" ]]; then
+        if [[ -n "${{ inputs.ANSIBLE_VARS_FILE }}" ]]; then
           VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
         fi
 
