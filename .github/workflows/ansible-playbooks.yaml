@@ -58,14 +58,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip
         
-        /usr/bin/python3 -m pip install --upgrade pip
-        /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint
+        /usr/bin/python3 -m pip install --upgrade pip --break-system-packages
+        /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint --break-system-packages
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          /usr/bin/python3 -m pip install -r "$file_path"
+          /usr/bin/python3 -m pip install -r "$file_path" --break-system-packages
         else
           echo "No $file_path file found, skipping."
         fi
@@ -142,14 +142,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip
         
-        /usr/bin/python3 -m pip install --upgrade pip
-        /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint
+        /usr/bin/python3 -m pip install --upgrade pip --break-system-packages
+        /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint --break-system-packages
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          /usr/bin/python3 -m pip install -r "$file_path"
+          /usr/bin/python3 -m pip install -r "$file_path" --break-system-packages
         else
           echo "No $file_path file found, skipping."
         fi
@@ -166,16 +166,16 @@ jobs:
           echo "No $file_path file found, skipping."
         fi
 
-    - name: Debug Python environment
-      run: |
-        echo "Python path:"
-        which /usr/bin/python3
+    # - name: Debug Python environment
+    #   run: |
+    #     echo "Python path:"
+    #     which /usr/bin/python3
 
-        echo "Python version:"
-        /usr/bin/python3 --version
+    #     echo "Python version:"
+    #     /usr/bin/python3 --version
 
-        echo "Installed Azure libraries:"
-        /usr/bin/python3 -m pip list | grep -E "azure|msrest"
+    #     echo "Installed Azure libraries:"
+    #     /usr/bin/python3 -m pip list | grep -E "azure|msrest"
 
     - name: Run playbooks
       run: |
