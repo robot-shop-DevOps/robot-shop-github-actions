@@ -183,4 +183,5 @@ jobs:
         ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
-        $VARS_OPTION
+        $VARS_OPTION \
+        -e ansible_python_interpreter=$(which python3)
