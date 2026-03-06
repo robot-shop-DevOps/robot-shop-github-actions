@@ -44,22 +44,18 @@ runs:
           if [[ ${{ inputs.APP_SERVICE }} = "terraform" ]]; then  
             echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
             echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
-          fi
 
           elif [[ ${{ inputs.APP_SERVICE }} = "ansible" ]]; then  
             echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
             echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
-          fi
 
           elif [[ ${{ inputs.APP_SERVICE }} = "acr" ]]; then 
             echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
             echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
-          fi
 
           elif [[ ${{ inputs.APP_SERVICE }} = "automation" ]]; then 
             echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_AUTOMATION }}" >> $GITHUB_ENV
             echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_AUTOMATION }}" >> $GITHUB_ENV
-          fi
 
           elif [[ ${{ inputs.APP_SERVICE }} = "storage" ]]; then 
             echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_STORAGE }}" >> $GITHUB_ENV
