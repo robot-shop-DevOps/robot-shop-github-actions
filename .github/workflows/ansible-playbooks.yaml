@@ -184,4 +184,3 @@ jobs:
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
         $VARS_OPTION \
-        -e ansible_python_interpreter=$(which python3)
