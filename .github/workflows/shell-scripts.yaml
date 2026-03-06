@@ -28,7 +28,7 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Setup Cloud Credentials
-      uses: ./.github/actions/setup-cloud-creds
+      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
       with:
         CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
