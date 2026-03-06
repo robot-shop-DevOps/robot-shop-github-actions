@@ -62,6 +62,15 @@ jobs:
         pip install --upgrade pip
         pip install ansible-lint
 
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing python dependencies from $file_path"
+          pip install -r "$file_path"
+        else
+          echo "No $file_path file found, skipping."
+        fi
+
     - name: Install Ansible Galaxy dependencies
       run: |
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
