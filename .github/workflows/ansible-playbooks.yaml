@@ -160,6 +160,17 @@ jobs:
           echo "No $file_path file found, skipping."
         fi
 
+    - name: Debug Python environment
+      run: |
+        echo "Python path:"
+        which python3
+
+        echo "Python version:"
+        python3 --version
+
+        echo "Installed Azure libraries:"
+        python3 -m pip list | grep -E "azure|msrest"
+
     - name: Run playbooks
       run: |
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
