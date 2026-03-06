@@ -55,14 +55,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install "ansible[azure]" ansible-lint
+        /usr/bin/python3 -m pip install --upgrade pip
+        /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          python3 -m pip install -r "$file_path"
+          /usr/bin/python3 -m pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -136,14 +136,14 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install "ansible[azure]" ansible-lint
+        /usr/bin/python3 -m pip install --upgrade pip
+        /usr/bin/python3 -m pip install "ansible[azure]" ansible-lint
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          python3 -m pip install -r "$file_path"
+          /usr/bin/python3 -m pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -163,13 +163,13 @@ jobs:
     - name: Debug Python environment
       run: |
         echo "Python path:"
-        which python3
+        which /usr/bin/python3
 
         echo "Python version:"
-        python3 --version
+        /usr/bin/python3 --version
 
         echo "Installed Azure libraries:"
-        python3 -m pip list | grep -E "azure|msrest"
+        /usr/bin/python3 -m pip list | grep -E "azure|msrest"
 
     - name: Run playbooks
       run: |
