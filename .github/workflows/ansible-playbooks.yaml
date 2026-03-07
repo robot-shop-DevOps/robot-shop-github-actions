@@ -58,14 +58,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip
         
-        $(which python3) -m pip install --upgrade pip --break-system-packages
-        $(which python3) -m pip install "ansible[azure]" ansible-lint --break-system-packages
+        sudo $(which python3) -m pip install --upgrade pip --break-system-packages
+        sudo $(which python3) -m pip install "ansible[azure]" ansible-lint --break-system-packages
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          $(which python3) -m pip install -r "$file_path" --break-system-packages
+          sudo $(which python3) -m pip install -r "$file_path" --break-system-packages
         else
           echo "No $file_path file found, skipping."
         fi
@@ -142,14 +142,14 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y python3-pip
         
-        $(which python3) -m pip install --upgrade pip --break-system-packages
-        $(which python3) -m pip install "ansible[azure]" ansible-lint --break-system-packages
+        sudo $(which python3) -m pip install --upgrade pip --break-system-packages
+        sudo $(which python3) -m pip install "ansible[azure]" ansible-lint --break-system-packages
 
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          $(which python3) -m pip install -r "$file_path" --break-system-packages
+          sudo $(which python3) -m pip install -r "$file_path" --break-system-packages
         else
           echo "No $file_path file found, skipping."
         fi
