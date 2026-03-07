@@ -48,10 +48,10 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_SERVICE: ansible
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+    # - name: Set up Python
+    #   uses: actions/setup-python@v4
+    #   with:
+    #     python-version: '3.11'
 
     - name: Install dependencies
       run: |
@@ -132,10 +132,10 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_SERVICE: ansible
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+    # - name: Set up Python
+    #   uses: actions/setup-python@v4
+    #   with:
+    #     python-version: '3.11'
 
     - name: Install dependencies
       run: |
