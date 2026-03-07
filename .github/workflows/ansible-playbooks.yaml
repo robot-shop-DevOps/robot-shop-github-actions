@@ -177,6 +177,11 @@ jobs:
         echo "Installed Azure libraries:"
         $(which python3) -m pip list | grep -E "azure|msrest"
 
+    - name: Debug ansible python
+      run: |
+        echo "ansible shebang: $(head -1 $(which ansible-playbook))"
+        echo "ansible-playbook path: $(which ansible-playbook)"
+
     - name: Run playbooks
       run: |
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
