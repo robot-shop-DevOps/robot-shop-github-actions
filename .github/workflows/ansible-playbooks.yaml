@@ -59,17 +59,6 @@ jobs:
           echo "Ansible venv already exists, skipping creation."
         fi
 
-    - name: Install dependencies
-      run: |
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing python dependencies from $file_path"
-           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
-        else
-          echo "No $file_path file found, skipping."
-        fi
-
     - name: Install Ansible Galaxy dependencies
       run: |
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
@@ -78,6 +67,15 @@ jobs:
           echo "Installing ansible galaxy dependencies from $file_path"
            ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections --force
            ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
+        else
+          echo "No $file_path file found, skipping."
+        fi
+
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing python dependencies from $file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -142,17 +140,6 @@ jobs:
           echo "Ansible venv already exists, skipping creation."
         fi
 
-    - name: Install dependencies
-      run: |
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing python dependencies from $file_path"
-           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
-        else
-          echo "No $file_path file found, skipping."
-        fi
-
     - name: Install Ansible Galaxy dependencies
       run: |
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
@@ -161,6 +148,15 @@ jobs:
           echo "Installing ansible galaxy dependencies from $file_path"
            ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections --force
            ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
+        else
+          echo "No $file_path file found, skipping."
+        fi
+
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing python dependencies from $file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
