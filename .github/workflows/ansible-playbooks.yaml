@@ -33,6 +33,7 @@ env:
   INVENTORY_DIR: ./inventories
   PLAYBOOK_DIR: ./playbooks
   ANSIBLE_LINT_CONFIG_PATH: ./.ansible-lint.yaml
+  ANSIBLE_PYTHON_VENV: /opt/ansible-venv
 
 jobs:
   validate:
@@ -48,24 +49,23 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_SERVICE: ansible
 
-    # - name: Set up Python
-    #   uses: actions/setup-python@v4
-    #   with:
-    #     python-version: '3.11'
+    - name: Setup Ansible venv
+      run: |
+        if [[ ! -d "${{ env.ANSIBLE_PYTHON_VENV }}" ]]; then
+          echo "Creating ansible venv..."
+          sudo python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
+          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
+        else
+          echo "Ansible venv already exists, skipping creation."
+        fi
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip
-        
-        # sudo $(which python3) -m pip install --upgrade pip --break-system-packages
-        sudo $(which python3) -m pip install "ansible[azure]" ansible-lint --break-system-packages
-
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          sudo $(which python3) -m pip install -r "$file_path" --break-system-packages
+          ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -76,8 +76,8 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing ansible galaxy dependencies from $file_path"
-          ansible-galaxy collection install -r "$file_path" -p ./collections
-          ansible-galaxy role install -r "$file_path" -p ./roles
+          ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections
+          ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
         else
           echo "No $file_path file found, skipping."
         fi
@@ -85,7 +85,7 @@ jobs:
     - name: Lint ansible playbooks
       run: |
         set -e
-        ansible-lint -c ${{ env.ANSIBLE_LINT_CONFIG_PATH }} ${{ env.PLAYBOOK_DIR }}
+        ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-lint -c ${{ env.ANSIBLE_LINT_CONFIG_PATH }} ${{ env.PLAYBOOK_DIR }}
 
   dry-run-playbooks:
     needs: validate
@@ -111,7 +111,7 @@ jobs:
           VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
         fi
 
-        ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
+        ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
         $VARS_OPTION \
@@ -132,24 +132,23 @@ jobs:
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
         APP_SERVICE: ansible
 
-    # - name: Set up Python
-    #   uses: actions/setup-python@v4
-    #   with:
-    #     python-version: '3.11'
+    - name: Setup Ansible venv
+      run: |
+        if [[ ! -d "${{ env.ANSIBLE_PYTHON_VENV }}" ]]; then
+          echo "Creating ansible venv..."
+          sudo python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
+          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
+        else
+          echo "Ansible venv already exists, skipping creation."
+        fi
 
     - name: Install dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip
-        
-        # sudo $(which python3) -m pip install --upgrade pip --break-system-packages
-        sudo $(which python3) -m pip install "ansible[azure]" ansible-lint --break-system-packages
-
         file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          sudo $(which python3) -m pip install -r "$file_path" --break-system-packages
+          ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -160,27 +159,11 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing ansible galaxy dependencies from $file_path"
-          ansible-galaxy collection install -r "$file_path" -p ./collections
-          ansible-galaxy role install -r "$file_path" -p ./roles
+          ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections
+          ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
         else
           echo "No $file_path file found, skipping."
         fi
-
-    - name: Debug Python environment
-      run: |
-        echo "Python path:"
-        which $(which python3)
-
-        echo "Python version:"
-        $(which python3) --version
-
-        echo "Installed Azure libraries:"
-        $(which python3) -m pip list | grep -E "azure|msrest"
-
-    - name: Debug ansible python
-      run: |
-        echo "ansible shebang: $(head -1 $(which ansible-playbook))"
-        echo "ansible-playbook path: $(which ansible-playbook)"
 
     - name: Run playbooks
       run: |
@@ -191,7 +174,7 @@ jobs:
           VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
         fi
 
-        ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
+        ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
         $VARS_OPTION \
