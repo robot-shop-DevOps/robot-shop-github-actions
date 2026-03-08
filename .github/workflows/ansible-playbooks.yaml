@@ -33,7 +33,7 @@ env:
   INVENTORY_DIR: ./inventories
   PLAYBOOK_DIR: ./playbooks
   ANSIBLE_LINT_CONFIG_PATH: ./.ansible-lint.yaml
-  ANSIBLE_PYTHON_VENV: /opt/ansible-venv
+  ANSIBLE_PYTHON_VENV: /home/GitHubActions/ansible-venv
 
 jobs:
   validate:
@@ -53,8 +53,8 @@ jobs:
       run: |
         if [[ ! -d "${{ env.ANSIBLE_PYTHON_VENV }}" ]]; then
           echo "Creating ansible venv..."
-          sudo python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
+           python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
         else
           echo "Ansible venv already exists, skipping creation."
         fi
@@ -65,7 +65,7 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -76,8 +76,8 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing ansible galaxy dependencies from $file_path"
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
         else
           echo "No $file_path file found, skipping."
         fi
@@ -136,8 +136,8 @@ jobs:
       run: |
         if [[ ! -d "${{ env.ANSIBLE_PYTHON_VENV }}" ]]; then
           echo "Creating ansible venv..."
-          sudo python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
+           python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
         else
           echo "Ansible venv already exists, skipping creation."
         fi
@@ -148,7 +148,7 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing python dependencies from $file_path"
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -159,8 +159,8 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing ansible galaxy dependencies from $file_path"
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections
-          sudo ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
         else
           echo "No $file_path file found, skipping."
         fi
