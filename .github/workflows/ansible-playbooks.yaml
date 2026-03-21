@@ -165,10 +165,10 @@ jobs:
 
     - name: Debug credentials
       run: |
-        echo "AZURE_CLIENT_ID is set: ${{ env.AZURE_CLIENT_ID != '' }}"
-        echo "AZURE_SECRET is set: ${{ env.AZURE_SECRET != '' }}"
-        echo "AZURE_TENANT is set: ${{ env.AZURE_TENANT != '' }}"
-        echo "AZURE_SUBSCRIPTION_ID is set: ${{ env.AZURE_SUBSCRIPTION_ID != '' }}"
+        echo "AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:+set}"
+        echo "AZURE_SECRET: ${AZURE_SECRET:+set}"
+        echo "AZURE_TENANT: ${AZURE_TENANT:+set}"
+        echo "AZURE_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID:+set}"
 
     - name: Run playbooks
       run: |
