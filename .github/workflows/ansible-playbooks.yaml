@@ -128,8 +128,10 @@ jobs:
       with:
         CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
         ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_SERVICE: ansible
-      secrets: inherit
+        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        ARM_SUBSCRIPTION_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
+        ARM_CLIENT_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}
+        ARM_CLIENT_SECRET_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}
 
     - name: Setup Ansible venv
       run: |
