@@ -175,6 +175,11 @@ jobs:
         echo "AZURE_SUBSCRIPTION_ID: ${AZURE_SUBSCRIPTION_ID:+set}"
 
     - name: Run playbooks
+      env:
+        AZURE_CLIENT_ID: ${{ env.AZURE_CLIENT_ID }}
+        AZURE_SECRET: ${{ env.AZURE_SECRET }}
+        AZURE_TENANT: ${{ env.AZURE_TENANT }}
+        AZURE_SUBSCRIPTION_ID: ${{ env.AZURE_SUBSCRIPTION_ID }}
       run: |
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
         
