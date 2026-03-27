@@ -53,30 +53,30 @@ runs:
           echo "ARM_TENANT_ID=${{ inputs.ARM_TENANT_ID }}" >> $GITHUB_ENV
           echo "Configured Azure creds"
 
-          # echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          # echo "ARM_SUBSCRIPTION_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
           # if [[ ${{ inputs.APP_SERVICE }} = "terraform" ]]; then  
-          #   echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
-          #   echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_SECRET=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM }}" >> $GITHUB_ENV
 
           if [[ ${{ inputs.APP_SERVICE }} == "ansible" ]]; then  
-            echo "AZURE_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
-            echo "AZURE_TENANT=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
-            echo "AZURE_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
-            echo "AZURE_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
+            echo "AZURE_SUBSCRIPTION_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+            echo "AZURE_TENANT=${{ inputs.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+            echo "AZURE_CLIENT_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
+            echo "AZURE_SECRET=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
           fi
 
           # elif [[ ${{ inputs.APP_SERVICE }} = "acr" ]]; then 
-          #   echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
-          #   echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ACR }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_SECRET=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ACR }}" >> $GITHUB_ENV
 
           # elif [[ ${{ inputs.APP_SERVICE }} = "automation" ]]; then 
-          #   echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_AUTOMATION }}" >> $GITHUB_ENV
-          #   echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_AUTOMATION }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_AUTOMATION }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_SECRET=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_AUTOMATION }}" >> $GITHUB_ENV
 
           # elif [[ ${{ inputs.APP_SERVICE }} = "storage" ]]; then 
-          #   echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_STORAGE }}" >> $GITHUB_ENV
-          #   echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_STORAGE }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_STORAGE }}" >> $GITHUB_ENV
+          #   echo "ARM_CLIENT_SECRET=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_STORAGE }}" >> $GITHUB_ENV
           # fi
 
         elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
@@ -88,13 +88,13 @@ runs:
       shell: bash 
       run: |
         if [[ ${{ inputs.ENVIRONMENT }} = "dev" ]]; then  
-          echo "ARM_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM_IAM }}" >> $GITHUB_ENV
-          echo "ARM_CLIENT_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM_IAM }}" >> $GITHUB_ENV
-          echo "ARM_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_TERRAFORM_IAM }}" >> $GITHUB_ENV
+          echo "ARM_CLIENT_SECRET=${{ inputs.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_TERRAFORM_IAM }}" >> $GITHUB_ENV
+          echo "ARM_SUBSCRIPTION_ID=${{ inputs.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
         elif [[ ${{ inputs.ENVIRONMENT }} = "prod" ]]; then
           echo "PROD not setup"
         fi
 
-        echo "ARM_TENANT_ID=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "ARM_TENANT_ID=${{ inputs.AZURE_TENANT_ID }}" >> $GITHUB_ENV
         echo "Configured Azure IAM creds"
