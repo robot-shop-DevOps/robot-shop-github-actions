@@ -42,16 +42,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
-    - name: Setup Cloud Credentials
-      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@composite-actions
-      with:
-        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_SERVICE: ansible
-        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-        ARM_SUBSCRIPTION_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
-        ARM_CLIENT_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}
-        ARM_CLIENT_SECRET_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}
+    # - name: Setup Cloud Credentials
+    #   uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@composite-actions
+    #   with:
+    #     CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #     APP_SERVICE: ansible
+    #     ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    #     ARM_SUBSCRIPTION_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
+    #     ARM_CLIENT_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}
+    #     ARM_CLIENT_SECRET_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}
+
+    - name: Set Azure credentials
+      run: |
+        echo "AZURE_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
+        echo "AZURE_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
+        echo "AZURE_TENANT=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "AZURE_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
     - name: Setup Ansible venv
       run: |
@@ -127,16 +134,23 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
-    - name: Setup Cloud Credentials
-      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@composite-actions
-      with:
-        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_SERVICE: ansible
-        ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-        ARM_SUBSCRIPTION_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
-        ARM_CLIENT_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}
-        ARM_CLIENT_SECRET_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}
+    # - name: Setup Cloud Credentials
+    #   uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@composite-actions
+    #   with:
+    #     CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
+    #     ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+    #     APP_SERVICE: ansible
+    #     ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+    #     ARM_SUBSCRIPTION_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}
+    #     ARM_CLIENT_ID_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}
+    #     ARM_CLIENT_SECRET_DEV: ${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}
+
+    - name: Set Azure credentials
+      run: |
+        echo "AZURE_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
+        echo "AZURE_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
+        echo "AZURE_TENANT=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "AZURE_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
 
     - name: Setup Ansible venv
       run: |
