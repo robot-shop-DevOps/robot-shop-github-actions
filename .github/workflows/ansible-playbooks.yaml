@@ -122,7 +122,7 @@ jobs:
   run-playbooks:
     needs: validate
     runs-on: robot-shop-runner-azure-dev
-    if: ${{ github.ref_name == 'develop' && inputs.ANSIBLE_COMMAND == 'run' }}
+    #if: ${{ github.ref_name == 'develop' && inputs.ANSIBLE_COMMAND == 'run' }}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
