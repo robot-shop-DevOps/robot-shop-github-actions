@@ -33,6 +33,7 @@ env:
   INVENTORY_DIR: ./inventories
   PLAYBOOK_DIR: ./playbooks
   ANSIBLE_LINT_CONFIG_PATH: ./.ansible-lint.yaml
+  ANSIBLE_PYTHON_VENV: /home/GitHubActions/ansible-venv
 
 jobs:
   validate:
@@ -41,30 +42,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v6
 
-    - name: Setup Cloud Credentials
-      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
-      with:
-        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_SERVICE: ansible
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
+    - name: Setup Ansible venv
       run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install "ansible[azure]" ansible-lint
-
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing python dependencies from $file_path"
-          python3 -m pip install -r "$file_path"
+        if [[ ! -d "${{ env.ANSIBLE_PYTHON_VENV }}" ]]; then
+          echo "Creating ansible venv..."
+           python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
         else
-          echo "No $file_path file found, skipping."
+          echo "Ansible venv already exists, skipping creation."
         fi
 
     - name: Install Ansible Galaxy dependencies
@@ -73,8 +58,19 @@ jobs:
 
         if [[ -f "$file_path" ]]; then
           echo "Installing ansible galaxy dependencies from $file_path"
-          ansible-galaxy collection install -r "$file_path" -p ./collections
-          ansible-galaxy role install -r "$file_path" -p ./roles
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections --force
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
+
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r ./collections/ansible_collections/azure/azcollection/requirements.txt
+        else
+          echo "No $file_path file found, skipping."
+        fi
+
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing python dependencies from $file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
         else
           echo "No $file_path file found, skipping."
         fi
@@ -82,24 +78,57 @@ jobs:
     - name: Lint ansible playbooks
       run: |
         set -e
-        ansible-lint -c ${{ env.ANSIBLE_LINT_CONFIG_PATH }} ${{ env.PLAYBOOK_DIR }}
+        ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-lint -c ${{ env.ANSIBLE_LINT_CONFIG_PATH }} ${{ env.PLAYBOOK_DIR }}
 
-  dry-run-playbooks:
+  playbooks:
     needs: validate
     runs-on: robot-shop-runner-azure-dev
-    if: ${{ inputs.ANSIBLE_COMMAND == 'dry_run'}}
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
 
-    - name: Setup Cloud Credentials
-      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
-      with:
-        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_SERVICE: ansible
+    - name: Set Azure credentials
+      run: |
+        echo "AZURE_CLIENT_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_ID_ANSIBLE }}" >> $GITHUB_ENV
+        echo "AZURE_SECRET=${{ secrets.ROBOT_SHOP_DEV_AZURE_CLIENT_SECRET_ANSIBLE }}" >> $GITHUB_ENV
+        echo "AZURE_TENANT=${{ secrets.AZURE_TENANT_ID }}" >> $GITHUB_ENV
+        echo "AZURE_SUBSCRIPTION_ID=${{ secrets.ROBOT_SHOP_DEV_AZURE_SUBSCRIPTION_ID }}" >> $GITHUB_ENV
+
+    - name: Setup Ansible venv
+      run: |
+        if [[ ! -d "${{ env.ANSIBLE_PYTHON_VENV }}" ]]; then
+          echo "Creating ansible venv..."
+           python3 -m venv ${{ env.ANSIBLE_PYTHON_VENV }}
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install "ansible[azure]" ansible-lint
+        else
+          echo "Ansible venv already exists, skipping creation."
+        fi
+
+    - name: Install Ansible Galaxy dependencies
+      run: |
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing ansible galaxy dependencies from $file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy collection install -r "$file_path" -p ./collections --force
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-galaxy role install -r "$file_path" -p ./roles
+
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r ./collections/ansible_collections/azure/azcollection/requirements.txt
+        else
+          echo "No $file_path file found, skipping."
+        fi
+
+        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
+
+        if [[ -f "$file_path" ]]; then
+          echo "Installing python dependencies from $file_path"
+           ${{ env.ANSIBLE_PYTHON_VENV }}/bin/pip install -r "$file_path"
+        else
+          echo "No $file_path file found, skipping."
+        fi
 
     - name: Dry run ansible playbooks
+      if: ${{ inputs.ANSIBLE_COMMAND == 'dry_run'}}
       run: |
         echo "Dry Running playbook ${{ inputs.PLAYBOOK }}"
         
@@ -108,59 +137,14 @@ jobs:
           VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
         fi
 
-        ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
+        ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
         $VARS_OPTION \
         --check --diff
-        
-  run-playbooks:
-    needs: validate
-    runs-on: robot-shop-runner-azure-dev
-    if: ${{ github.ref_name == 'develop' && inputs.ANSIBLE_COMMAND == 'run' }}
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v6
-
-    - name: Setup Cloud Credentials
-      uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/setup-cloud-creds@main
-      with:
-        CLOUD_PROVIDER: ${{ inputs.CLOUD_PROVIDER }}
-        ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
-        APP_SERVICE: ansible
-
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install dependencies
-      run: |
-        python3 -m pip install --upgrade pip
-        python3 -m pip install "ansible[azure]" ansible-lint
-
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.txt'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing python dependencies from $file_path"
-          python3 -m pip install -r "$file_path"
-        else
-          echo "No $file_path file found, skipping."
-        fi
-
-    - name: Install Ansible Galaxy dependencies
-      run: |
-        file_path='${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/requirements.yaml'
-
-        if [[ -f "$file_path" ]]; then
-          echo "Installing ansible galaxy dependencies from $file_path"
-          ansible-galaxy collection install -r "$file_path" -p ./collections
-          ansible-galaxy role install -r "$file_path" -p ./roles
-        else
-          echo "No $file_path file found, skipping."
-        fi
 
     - name: Run playbooks
+      if: ${{ github.ref_name == 'develop' && inputs.ANSIBLE_COMMAND == 'run' }}
       run: |
         echo "Running playbook ${{ inputs.PLAYBOOK }}"
         
@@ -169,7 +153,7 @@ jobs:
           VARS_OPTION="-e @${{ inputs.ANSIBLE_VARS_FILE }}"
         fi
 
-        ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
+        ${{ env.ANSIBLE_PYTHON_VENV }}/bin/ansible-playbook -i ${{ env.INVENTORY_DIR }}/${{ inputs.ENVIRONMENT }}/hosts.yaml \
         ${{ env.PLAYBOOK_DIR }}/${{ inputs.PLAYBOOK }}/${{ inputs.PLAYBOOK }}.yaml \
         ${{ inputs.ANSIBLE_EXTRA_ARGS }} \
-        $VARS_OPTION
+        $VARS_OPTION   
