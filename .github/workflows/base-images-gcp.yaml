@@ -1,0 +1,109 @@
+name: Base Images
+
+on:
+  workflow_call:
+    inputs:
+      IMAGE:
+        required: true
+        type: string
+
+      REGISTRY:
+        required: true
+        type: string
+
+      SOURCE_TAG:
+        required: true
+        type: string
+
+      TARGET_TAG:
+        required: true
+        type: string
+
+      ENVIRONMENT:
+        required: true
+        type: string
+
+env:
+  GCP_PROJECT: robotshop-platform-dev
+  GCP_REGION: asia-south1
+  GCP_REPOSITORY: baseimages
+  GCP_REGISTRY_URL: asia-south1-docker.pkg.dev
+
+jobs:
+  sync-image:
+    runs-on: robot-shop-runner-azure-dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Login to Google Artifact Registry with buildah
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp-buildah-login@main
+        with:
+          REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
+          GCP_PROJECT: ${{ env.GCP_PROJECT }}
+          WORKLOAD_IDENTITY_PROVIDER: projects/1034830772222/locations/global/workloadIdentityPools/github-actions/providers/github
+          SERVICE_ACCOUNT: artifact-registry@robotshop-platform-dev.iam.gserviceaccount.com
+        
+
+      - name: Generate full image
+        run: |
+          IMAGE="${{ inputs.IMAGE }}"
+          REGISTRY="${{ inputs.REGISTRY }}"
+
+          if [[ "$REGISTRY" == "docker.io" || "$REGISTRY" == "quay.io" || "$REGISTRY" == "registry.k8s.io" ]]; then
+              if [[ "$IMAGE" == *"/"* ]]; then
+                  FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              else
+                  FULL_IMAGE="${REGISTRY}/library/${IMAGE}"
+              fi
+          else
+              if [[ "$IMAGE" != *"/"* ]]; then
+                  echo "ERROR: Registry $REGISTRY requires explicit namespace for image '$IMAGE'."
+                  exit 1
+              fi
+              FULL_IMAGE="${REGISTRY}/${IMAGE}"
+          fi
+
+          echo "FULL_IMAGE=$FULL_IMAGE" >> "$GITHUB_ENV"
+
+      - name: Pull Image from Registry
+        run: |
+          SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
+
+          echo "Pulling image from Registry: ${FULL_IMAGE}:${SOURCE_TAG}"
+
+          buildah pull "${FULL_IMAGE}:${SOURCE_TAG}"
+
+      - name: Tag and push to Artifact Registry
+        run: |
+          IMAGE="${{ inputs.IMAGE }}"
+          SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
+          TARGET_TAG="${{ inputs.TARGET_TAG }}"
+
+          GCP_IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${IMAGE}:${TARGET_TAG}"
+
+          echo "Retagging ${FULL_IMAGE}:${SOURCE_TAG}"
+          echo "        -> ${GCP_IMAGE}"
+
+          buildah tag \
+            "${FULL_IMAGE}:${SOURCE_TAG}" \
+            "${GCP_IMAGE}"
+
+          echo "Pushing ${GCP_IMAGE}"
+
+          buildah push "${GCP_IMAGE}"
+
+      - name: Delete Local Images
+        run: |
+          IMAGE="${{ inputs.IMAGE }}"
+          SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
+          TARGET_TAG="${{ inputs.TARGET_TAG }}"
+
+          GCP_IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${IMAGE}:${TARGET_TAG}"
+
+          echo "Deleting local images to free up space"
+
+          buildah rmi "${FULL_IMAGE}:${SOURCE_TAG}"
+          buildah rmi "${GCP_IMAGE}"

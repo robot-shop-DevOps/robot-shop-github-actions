@@ -1,0 +1,45 @@
+name: Login to Google Artifact Registry with Buildah
+
+description: Authenticate Buildah with Google Artifact Registry using Workload Identity Federation
+
+inputs:
+  REGISTRY_URL:
+    description: Google Artifact Registry registry URL
+    required: true
+
+  GCP_PROJECT:
+    description: Google Cloud Project ID
+    required: true
+
+  WORKLOAD_IDENTITY_PROVIDER:
+    description: Google Cloud Workload Identity Provider
+    required: true
+
+  SERVICE_ACCOUNT:
+    description: Google Cloud service account to impersonate
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v3
+      with:
+        project_id: ${{ inputs.GCP_PROJECT }}
+        workload_identity_provider: ${{ inputs.WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ inputs.SERVICE_ACCOUNT }}
+        token_format: access_token
+        
+    - name: Buildah login
+      shell: bash
+      env:
+        ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+      run: |
+        set -e
+
+        echo "$ACCESS_TOKEN" | buildah login \
+          "${{ inputs.REGISTRY_URL }}" \
+          --username oauth2accesstoken \
+          --password-stdin
