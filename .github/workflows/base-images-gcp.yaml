@@ -3,6 +3,14 @@ name: Base Images
 on:
   workflow_call:
     inputs:
+      RUNNER_GROUP:
+        required: true
+        type: string
+
+      RUNNER_LABEL:
+        required: true
+        type: string
+
       IMAGE:
         required: true
         type: string
@@ -31,7 +39,9 @@ env:
 
 jobs:
   sync-image:
-    runs-on: robot-shop-runner-azure-dev
+    runs-on:
+      group: ${{ inputs.RUNNER_GROUP }}
+      labels: ${{ inputs.RUNNER_LABEL }}
 
     permissions:
       contents: read
