@@ -23,7 +23,7 @@ on:
 env:
   GCP_PROJECT: robotshop-platform-dev
   GCP_REGION: asia-south1
-  GCP_REPOSITORY: adk-agents
+  GCP_REPOSITORY: adkagents
   GCP_REGISTRY_URL: asia-south1-docker.pkg.dev
 
 
