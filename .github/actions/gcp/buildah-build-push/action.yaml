@@ -14,6 +14,9 @@ inputs:
 
   REPOSITORY:
     required: true
+  
+  PROJECT:
+    required: true
 
 outputs:
   IMAGE_TAG:
@@ -40,11 +43,11 @@ runs:
         set -e
 
         buildah build -t ${{ inputs.IMAGE }} ${{ inputs.DOCKERFILE_PATH }}
-        buildah tag ${{ inputs.IMAGE }} ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}     
+        buildah tag ${{ inputs.IMAGE }} ${{ inputs.REGISTRY_URL }}/${{ inputs.PROJECT }}/${{ inputs.REPOSITORY }}/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}     
 
     - name: Push image with buildah
       shell: bash
       run: |
         set -e
 
-        buildah push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}
+        buildah push ${{ inputs.REGISTRY_URL }}/${{ inputs.PROJECT }}/${{ inputs.REPOSITORY }}/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}
