@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       RUNNER_GROUP:
-        required: true
+        required: false
         type: string
 
       RUNNER_LABEL:
@@ -40,7 +40,7 @@ env:
 jobs:
   sync-image:
     runs-on:
-      group: ${{ inputs.RUNNER_GROUP }}
+      group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
       labels: ${{ inputs.RUNNER_LABEL || 'self-hosted' }}
 
     permissions:

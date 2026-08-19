@@ -3,6 +3,14 @@ name: Google ADK Agents on Cloud Run
 on:
   workflow_call:
     inputs:
+      RUNNER_GROUP:
+        required: false
+        type: string
+
+      RUNNER_LABEL:
+        required: false
+        type: string
+        
       IMAGE:
         required: true
         type: string
@@ -21,7 +29,9 @@ env:
 
 jobs:
   build:
-    runs-on: robot-shop-runner-gcp-dev
+    runs-on:
+      group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
+      labels: ${{ inputs.RUNNER_LABEL || 'self-hosted' }}
 
     permissions:
       contents: read
