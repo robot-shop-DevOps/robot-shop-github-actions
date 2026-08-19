@@ -1,0 +1,50 @@
+name: Build and Push Image to Google Artifact Registry
+
+description: Build a container image with Buildah and push it to Google Artifact Registry
+
+inputs:
+  IMAGE:
+    required: true
+
+  DOCKERFILE_PATH:
+    required: true
+
+  REGISTRY_URL:
+    required: true
+
+  REPOSITORY:
+    required: true
+
+outputs:
+  IMAGE_TAG:
+    description: Generated image tag
+    value: ${{ steps.version.outputs.IMAGE_TAG }}
+
+runs:
+  using: composite
+  steps:
+    - name: Generate image tag
+      id: version
+      shell: bash
+      run: |
+        set -e
+
+        branch_name=$(echo "$GITHUB_REF_NAME" | tr '/' '-')
+        image_tag="${branch_name}-${GITHUB_SHA::8}"
+        echo "IMAGE_TAG=${image_tag}" >> "$GITHUB_OUTPUT"
+        echo "Generated image tag: ${image_tag}"
+
+    - name: Build image with Buildah
+      shell: bash
+      run: |
+        set -e
+
+        buildah build -t ${{ inputs.IMAGE }} ${{ inputs.DOCKERFILE_PATH }}
+        buildah tag ${{ inputs.IMAGE }} ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}     
+
+    - name: Push image with buildah
+      shell: bash
+      run: |
+        set -e
+
+        buildah push ${{ inputs.REGISTRY_URL }}/${{ inputs.REPOSITORY }}/${{ inputs.IMAGE }}:${{ steps.version.outputs.IMAGE_TAG }}

@@ -1,0 +1,52 @@
+name: Google ADK Agents on Cloud Run
+
+on:
+  workflow_call:
+    inputs:
+      IMAGE:
+        required: true
+        type: string
+
+      DOCKERFILE_PATH:
+        required: true
+        type: string
+
+
+env:
+  GCP_PROJECT: robotshop-platform-dev
+  GCP_REGION: asia-south1
+  GCP_REPOSITORY: adk-agents
+  GCP_REGISTRY_URL: asia-south1-docker.pkg.dev
+
+
+jobs:
+  build:
+    runs-on: robot-shop-runner-gcp-dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      IMAGE_TAG: ${{ steps.image.outputs.IMAGE_TAG }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Login to Google Artifact Registry with buildah
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp-buildah-login@gcp
+        with:
+          REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
+          GCP_PROJECT: ${{ env.GCP_PROJECT }}
+          WORKLOAD_IDENTITY_PROVIDER: projects/1034830772222/locations/global/workloadIdentityPools/github-actions/providers/github
+          SERVICE_ACCOUNT: artifact-registry@robotshop-platform-dev.iam.gserviceaccount.com
+
+      - name: Build & Push image with buildah
+        id: image
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/buildah-build-push@gcp
+        with:
+          IMAGE: ${{ inputs.IMAGE }}
+          DOCKERFILE_PATH: ${{ inputs.DOCKERFILE_PATH }}
+          REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}/${{ env.GCP_PROJECT }}
+          REPOSITORY: ${{ env.GCP_REPOSITORY }}

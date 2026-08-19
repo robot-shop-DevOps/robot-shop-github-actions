@@ -49,7 +49,7 @@ jobs:
 
     steps:
       - name: Login to Google Artifact Registry with buildah
-        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp-buildah-login@gcp
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/gcp-buildah-login@gcp
         with:
           REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
           GCP_PROJECT: ${{ env.GCP_PROJECT }}
