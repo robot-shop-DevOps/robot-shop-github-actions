@@ -59,4 +59,4 @@ jobs:
           IMAGE: ${{ inputs.IMAGE }}
           DOCKERFILE_PATH: ${{ inputs.DOCKERFILE_PATH }}
           REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
-          REPOSITORY: ${{ env.GCP_REPOSITORY }}
+          PROJECT: ${{ env.GCP_PROJECT }}
