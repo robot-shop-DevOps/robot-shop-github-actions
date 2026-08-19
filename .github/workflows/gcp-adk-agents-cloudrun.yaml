@@ -60,3 +60,4 @@ jobs:
           DOCKERFILE_PATH: ${{ inputs.DOCKERFILE_PATH }}
           REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
           PROJECT: ${{ env.GCP_PROJECT }}
+          REPOSITORY: ${{ env.GCP_REPOSITORY }}
