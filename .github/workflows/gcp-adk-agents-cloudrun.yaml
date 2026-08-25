@@ -18,13 +18,20 @@ on:
       DOCKERFILE_PATH:
         required: true
         type: string
+      
+      CLOUD_RUN_YAML_PATH:
+        required: true
+        type: string
 
 
 env:
+  WIF_PROVIDER: projects/1034830772222/locations/global/workloadIdentityPools/github-actions/providers/github
   GCP_PROJECT: robotshop-platform-dev
   GCP_REGION: asia-south1
   GCP_REPOSITORY: adkagents
   GCP_REGISTRY_URL: asia-south1-docker.pkg.dev
+  GCP_ARTIFACT_REGISTRY_SERVICE_ACCOUNT: artifact-registry@robotshop-platform-dev.iam.gserviceaccount.com
+  CLOUD_RUN_SERVICE_ACCOUNT: cloud-run@robotshop-platform-dev.iam.gserviceaccount.com
 
 
 jobs:
@@ -45,12 +52,12 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Login to Google Artifact Registry with buildah
-        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/gcp-buildah-login@gcp
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/artifact-registry-login@gcp
         with:
           REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
           GCP_PROJECT: ${{ env.GCP_PROJECT }}
-          WORKLOAD_IDENTITY_PROVIDER: projects/1034830772222/locations/global/workloadIdentityPools/github-actions/providers/github
-          SERVICE_ACCOUNT: artifact-registry@robotshop-platform-dev.iam.gserviceaccount.com
+          WORKLOAD_IDENTITY_PROVIDER: ${{ env.WIF_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ env.GCP_ARTIFACT_REGISTRY_SERVICE_ACCOUNT }}
 
       - name: Build & Push image with buildah
         id: image
@@ -61,3 +68,44 @@ jobs:
           REGISTRY_URL: ${{ env.GCP_REGISTRY_URL }}
           PROJECT: ${{ env.GCP_PROJECT }}
           REPOSITORY: ${{ env.GCP_REPOSITORY }}
+  
+  deploy:
+    if: ${{ github.ref_name == 'develop' }}
+    needs: build
+    runs-on:
+      group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
+      labels: ${{ inputs.RUNNER_LABEL || 'self-hosted' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud Run
+        id: auth
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/cloud-run-login@gcp
+        with:
+          GCP_PROJECT: ${{ env.GCP_PROJECT }}
+          WORKLOAD_IDENTITY_PROVIDER: ${{ env.WIF_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ env.CLOUD_RUN_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Prepare Cloud Run manifest
+        run: |
+          set -e
+          
+          export IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${{ inputs.IMAGE }}:${{ needs.build.outputs.IMAGE_TAG }}"
+          envsubst '${IMAGE}' < ${{ inputs.CLOUD_RUN_YAML_PATH }} > ${RUNNER_TEMP}/cloudrun.yaml
+
+      - name: Deploy to Cloud Run
+        run: |
+          set -e
+
+          gcloud run services replace "${RUNNER_TEMP}/cloudrun.yaml" \
+            --project="${GCP_PROJECT}" \
+            --region="${GCP_REGION}"
