@@ -93,12 +93,10 @@ jobs:
 
       - name: Prepare Cloud Run manifest
         shell: bash
-        env:
-          IMAGE_TAG: ${{ needs.build.outputs.IMAGE_TAG }}
         run: |
           set -e
 
-          IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${{ env.GCP_REPOSITORY }}/${{ inputs.IMAGE }}:${IMAGE_TAG}"
+          export IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${{ env.GCP_REPOSITORY }}/${{ inputs.IMAGE }}:${{ needs.build.outputs.IMAGE_TAG }}"
 
           echo "Deploying image:"
           echo "${IMAGE}"
