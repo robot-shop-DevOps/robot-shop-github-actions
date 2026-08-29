@@ -1,0 +1,35 @@
+name: Fetch Secret from GCP Secret Manager
+
+description: Fetch a secret from Google Secret Manager
+
+inputs:
+  SECRET_NAME:
+    description: Name of the GCP Secret Manager secret
+    required: true
+
+  ENV_NAME:
+    description: Environment variable name to store the secret value
+    required: false
+    default: GCP_SECRET_VALUE
+
+  PROJECT:
+    description: GCP project containing the secret
+    required: true
+
+
+runs:
+  using: composite
+
+  steps:
+    - name: Fetch secret
+      shell: bash
+      run: |
+        set -e
+
+        SECRET_VALUE="$(gcloud secrets versions access latest \
+          --secret="${{ inputs.SECRET_NAME }}" \
+          --project="${{ inputs.PROJECT }}")"
+
+        echo "::add-mask::$SECRET_VALUE"
+        echo "${{ inputs.ENV_NAME }}=$SECRET_VALUE" >> "$GITHUB_ENV"
+        echo "Secret '${{ inputs.SECRET_NAME }}' fetched successfully. Use the environment variable '${{ inputs.ENV_NAME }}' to access the secret value."

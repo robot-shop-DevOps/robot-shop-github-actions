@@ -1,0 +1,29 @@
+name: Generate Google Identity Token
+
+description: Generate a Google OIDC identity token for an authenticated GCP service
+
+inputs:
+  AUDIENCE:
+    description: Audience for the identity token
+    required: true
+
+  ENV_NAME:
+    description: Environment variable to store the token
+    required: false
+    default: GOOGLE_ID_TOKEN
+
+runs:
+  using: composite
+
+  steps:
+    - name: Generate identity token
+      shell: bash
+      run: |
+        set -e
+
+        ID_TOKEN="$(gcloud auth print-identity-token \
+          --audiences="${{ inputs.AUDIENCE }}")"
+
+        echo "::add-mask::$ID_TOKEN"
+        echo "${{ inputs.ENV_NAME }}=$ID_TOKEN" >> "$GITHUB_ENV"
+        echo "Google identity token generated successfully. Use the environment variable '${{ inputs.ENV_NAME }}' to access the secret value."

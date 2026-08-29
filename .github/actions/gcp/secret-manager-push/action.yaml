@@ -1,0 +1,40 @@
+name: Push Secret to GCP Secret Manager
+
+description: Add a new version of a secret to Google Secret Manager
+
+inputs:
+  SECRET_NAME:
+    description: Name of the GCP Secret Manager secret
+    required: true
+
+  SECRET_VALUE:
+    description: Secret value to store
+    required: true
+
+  PROJECT:
+    description: GCP project containing the secret
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - name: Push secret
+      shell: bash
+      run: |
+        set -e
+
+        echo -n "${{ inputs.SECRET_VALUE }}" | \
+        gcloud secrets versions add "${{ inputs.SECRET_NAME }}" \
+          --data-file=- \
+          --project="${{ inputs.PROJECT }}"
+
+        echo "Secret '${{ inputs.SECRET_NAME }}' pushed successfully."
+
+        LATEST_VERSION="$(gcloud secrets versions list "${{ inputs.SECRET_NAME }}" \
+          --project="${{ inputs.PROJECT }}" \
+          --sort-by="~createTime" \
+          --limit=1 \
+          --format="value(name)")"
+
+        echo "Latest secret version: ${LATEST_VERSION}"
