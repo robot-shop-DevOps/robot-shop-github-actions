@@ -1,6 +1,6 @@
 name: Push Secret to GCP Secret Manager
 
-description: Add a new version of a secret to Google Secret Manager
+description: Create a secret or add a new version to Google Secret Manager
 
 inputs:
   SECRET_NAME:
@@ -24,10 +24,30 @@ runs:
       run: |
         set -e
 
-        echo -n "${{ inputs.SECRET_VALUE }}" | \
-        gcloud secrets versions add "${{ inputs.SECRET_NAME }}" \
-          --data-file=- \
-          --project="${{ inputs.PROJECT }}"
+        if gcloud secrets describe "${{ inputs.SECRET_NAME }}" \
+          --project="${{ inputs.PROJECT }}" > /dev/null 2>&1; then
+
+          echo "Secret '${{ inputs.SECRET_NAME }}' already exists. Adding a new version..."
+
+          echo -n "${{ inputs.SECRET_VALUE }}" | \
+          gcloud secrets versions add "${{ inputs.SECRET_NAME }}" \
+            --data-file=- \
+            --project="${{ inputs.PROJECT }}"
+
+        else
+
+          echo "Secret '${{ inputs.SECRET_NAME }}' does not exist. Creating secret..."
+
+          gcloud secrets create "${{ inputs.SECRET_NAME }}" \
+            --replication-policy="automatic" \
+            --project="${{ inputs.PROJECT }}"
+
+          echo -n "${{ inputs.SECRET_VALUE }}" | \
+          gcloud secrets versions add "${{ inputs.SECRET_NAME }}" \
+            --data-file=- \
+            --project="${{ inputs.PROJECT }}"
+
+        fi
 
         echo "Secret '${{ inputs.SECRET_NAME }}' pushed successfully."
 
