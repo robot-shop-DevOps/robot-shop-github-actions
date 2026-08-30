@@ -35,7 +35,7 @@ runs:
     - name: Buildah login
       shell: bash
       env:
-        ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        ACCESS_TOKEN: ${{ steps.gcp_auth.outputs.access_token }}
       run: |
         set -e
 
