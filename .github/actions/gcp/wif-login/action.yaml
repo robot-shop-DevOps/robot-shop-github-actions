@@ -1,0 +1,52 @@
+name: Authenticate to Google Cloud
+
+description: Authenticate to Google Cloud using Workload Identity Federation
+
+inputs:
+  GCP_PROJECT:
+    description: Google Cloud Project ID
+    required: true
+
+  WORKLOAD_IDENTITY_PROVIDER:
+    description: Google Cloud Workload Identity Provider
+    required: true
+
+  SERVICE_ACCOUNT:
+    description: Google Cloud service account to impersonate
+    required: true
+
+  TOKEN_FORMAT:
+    description: Token format to generate
+    required: false
+    default: access_token
+
+  ID_TOKEN_AUDIENCE:
+    description: Audience for the ID token
+    required: false
+
+outputs:
+  AUTH_TOKEN:
+    description: Generated Google authentication token
+    value: ${{ steps.auth.outputs.auth_token }}
+
+  ACCESS_TOKEN:
+    description: Generated Google access token
+    value: ${{ steps.auth.outputs.access_token }}
+
+  ID_TOKEN:
+    description: Generated Google ID token
+    value: ${{ steps.auth.outputs.id_token }}
+
+runs:
+  using: composite
+
+  steps:
+    - name: Authenticate to Google Cloud
+      id: auth
+      uses: google-github-actions/auth@v3
+      with:
+        project_id: ${{ inputs.GCP_PROJECT }}
+        workload_identity_provider: ${{ inputs.WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: ${{ inputs.SERVICE_ACCOUNT }}
+        token_format: ${{ inputs.TOKEN_FORMAT }}
+        id_token_audience: ${{ inputs.ID_TOKEN_AUDIENCE }}
