@@ -7,6 +7,10 @@ inputs:
     description: Audience for the identity token
     required: true
 
+  SERVICE_ACCOUNT:
+    description: Service account email to impersonate for generating the identity token
+    required: true
+
   ENV_NAME:
     description: Environment variable to store the token
     required: false
@@ -22,6 +26,7 @@ runs:
         set -e
 
         ID_TOKEN="$(gcloud auth print-identity-token \
+          "${{ inputs.SERVICE_ACCOUNT }}" \
           --audiences="${{ inputs.AUDIENCE }}")"
 
         echo "::add-mask::$ID_TOKEN"
