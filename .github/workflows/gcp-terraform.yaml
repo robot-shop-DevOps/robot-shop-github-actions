@@ -47,6 +47,9 @@ env:
 jobs:
   terraform-plan:
     name: Terraform Plan
+    permissions:
+      contents: read
+      id-token: write
 
     runs-on:
       group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
@@ -108,7 +111,13 @@ jobs:
 
   terraform-apply:
     name: Terraform Apply
+
+    permissions:
+      contents: read
+      id-token: write
+      
     needs: terraform-plan
+
     if: ${{ github.ref_name == 'main' }}
 
     runs-on:
