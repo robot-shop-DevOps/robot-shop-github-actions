@@ -82,7 +82,7 @@ jobs:
         working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
         run: |
           if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
-            ${{ inputs.TERRAFORM_OVERRIDE }}
+            terraform ${{ inputs.TERRAFORM_OVERRIDE }}
           else
             terraform plan -var-file="${{ inputs.ENVIRONMENT }}.tfvars" ${{ inputs.TERRAFORM_EXTRA_ARGS }} -out=tfplan
           fi
@@ -149,7 +149,7 @@ jobs:
         working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
         run: |
           if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
-            ${{ inputs.TERRAFORM_OVERRIDE }}
+            terraform ${{ inputs.TERRAFORM_OVERRIDE }}
           else
             terraform apply -auto-approve tfplan ${{ inputs.TERRAFORM_EXTRA_ARGS }}
           fi
