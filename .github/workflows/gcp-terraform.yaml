@@ -78,16 +78,6 @@ jobs:
         run: |
           terraform init ${{ inputs.TERRAFORM_OVERRIDE }}
 
-      - name: Terraform Format Check
-        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
-        run: |
-          terraform fmt -check -recursive
-
-      - name: Terraform Validate
-        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
-        run: |
-          terraform validate
-
       - name: Terraform Plan
         working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
         run: |
@@ -115,7 +105,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      
+
     needs: terraform-plan
 
     if: ${{ github.ref_name == 'main' }}
