@@ -84,10 +84,7 @@ jobs:
           if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
             ${{ inputs.TERRAFORM_OVERRIDE }}
           else
-            terraform plan \
-              -var-file="${{ inputs.ENVIRONMENT }}.tfvars" \
-              ${{ inputs.TERRAFORM_EXTRA_ARGS }} \
-              -out=tfplan
+            terraform plan -var-file="${{ inputs.ENVIRONMENT }}.tfvars" ${{ inputs.TERRAFORM_EXTRA_ARGS }} -out=tfplan
           fi
 
       - name: Upload Terraform Plan
