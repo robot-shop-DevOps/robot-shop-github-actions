@@ -1,0 +1,159 @@
+name: Terraform
+
+on:
+  workflow_call:
+    inputs:
+      RUNNER_GROUP:
+        required: false
+        type: string
+        default: Local Runners
+
+      RUNNER_LABEL:
+        required: false
+        type: string
+        default: self-hosted
+
+      ENVIRONMENT:
+        required: true
+        type: string
+
+      GCP_PROJECT:
+        required: true
+        type: string
+
+      TERRAFORM_SERVICE_ACCOUNT:
+        required: true
+        type: string
+
+      TERRAFORM_EXTRA_ARGS:
+        required: false
+        type: string
+        default: ""
+
+      TERRAFORM_OVERRIDE:
+        required: false
+        type: string
+        default: ""
+
+      TERRAFORM_WORKING_DIR:
+        required: true
+        type: string
+
+      
+env:
+  TF_VERSION: "1.9.8"
+  WIF_PROVIDER: projects/1034830772222/locations/global/workloadIdentityPools/github-actions/providers/github
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+
+    runs-on:
+      group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
+      labels: ${{ inputs.RUNNER_LABEL || 'self-hosted' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        id: gcp_auth
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/wif-login@gcp
+        with:
+          GCP_PROJECT: ${{ inputs.GCP_PROJECT }}
+          WORKLOAD_IDENTITY_PROVIDER: ${{ env.WIF_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ inputs.TERRAFORM_SERVICE_ACCOUNT }}
+          TOKEN_FORMAT: access_token
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          terraform init ${{ inputs.TERRAFORM_OVERRIDE }}
+
+      - name: Terraform Format Check
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
+            ${{ inputs.TERRAFORM_OVERRIDE }}
+          else
+            terraform plan \
+              -var-file="${{ inputs.ENVIRONMENT }}.tfvars" \
+              ${{ inputs.TERRAFORM_EXTRA_ARGS }} \
+              -out=tfplan
+          fi
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ inputs.TERRAFORM_WORKING_DIR }}/tfplan
+          if-no-files-found: error
+          retention-days: 1
+
+
+  terraform-apply:
+    name: Terraform Apply
+    needs: terraform-plan
+    if: ${{ github.ref_name == 'main' }}
+
+    runs-on:
+      group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
+      labels: ${{ inputs.RUNNER_LABEL || 'self-hosted' }}
+
+    environment:
+      name: ${{ inputs.ENVIRONMENT }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Authenticate to Google Cloud
+        id: gcp_auth
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/wif-login@gcp
+        with:
+          GCP_PROJECT: ${{ inputs.GCP_PROJECT }}
+          WORKLOAD_IDENTITY_PROVIDER: ${{ env.WIF_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ inputs.TERRAFORM_SERVICE_ACCOUNT }}
+          TOKEN_FORMAT: access_token
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          terraform init ${{ inputs.TERRAFORM_OVERRIDE }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ inputs.TERRAFORM_WORKING_DIR }}
+
+      - name: Terraform Apply
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
+            ${{ inputs.TERRAFORM_OVERRIDE }}
+          else
+            terraform apply -auto-approve tfplan ${{ inputs.TERRAFORM_EXTRA_ARGS }}
+          fi
