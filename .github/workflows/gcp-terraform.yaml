@@ -47,6 +47,9 @@ env:
 jobs:
   terraform-plan:
     name: Terraform Plan
+
+    if: ${{ inputs.TERRAFORM_OVERRIDE == '' }}
+
     permissions:
       contents: read
       id-token: write
@@ -81,11 +84,8 @@ jobs:
       - name: Terraform Plan
         working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
         run: |
-          if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
-            terraform ${{ inputs.TERRAFORM_OVERRIDE }}
-          else
-            terraform plan -var-file="${{ inputs.ENVIRONMENT }}.tfvars" ${{ inputs.TERRAFORM_EXTRA_ARGS }} -out=tfplan
-          fi
+          terraform plan -var-file="${{ inputs.ENVIRONMENT }}.tfvars" ${{ inputs.TERRAFORM_EXTRA_ARGS }} -out=tfplan
+
 
       - name: Upload Terraform Plan
         uses: actions/upload-artifact@v4
@@ -98,14 +98,14 @@ jobs:
 
   terraform-apply:
     name: Terraform Apply
+    
+    if: ${{ github.ref_name == 'main' && inputs.TERRAFORM_OVERRIDE == '' }}
 
     permissions:
       contents: read
       id-token: write
 
     needs: terraform-plan
-
-    if: ${{ github.ref_name == 'main' }}
 
     runs-on:
       group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
@@ -148,8 +148,46 @@ jobs:
       - name: Terraform Apply
         working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
         run: |
-          if [ -n "${{ inputs.TERRAFORM_OVERRIDE }}" ]; then
-            terraform ${{ inputs.TERRAFORM_OVERRIDE }}
-          else
-            terraform apply -auto-approve tfplan ${{ inputs.TERRAFORM_EXTRA_ARGS }}
-          fi
+          terraform apply -auto-approve tfplan ${{ inputs.TERRAFORM_EXTRA_ARGS }}
+
+
+  terraform-override:
+    name: Terraform Override
+    if: ${{ github.ref_name == 'main' && inputs.TERRAFORM_OVERRIDE != '' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    runs-on:
+      group: ${{ inputs.RUNNER_GROUP || 'Local Runners' }}
+      labels: ${{ inputs.RUNNER_LABEL || 'self-hosted' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Authenticate to Google Cloud
+        id: gcp_auth
+        uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/wif-login@gcp
+        with:
+          GCP_PROJECT: ${{ inputs.GCP_PROJECT }}
+          WORKLOAD_IDENTITY_PROVIDER: ${{ env.WIF_PROVIDER }}
+          SERVICE_ACCOUNT: ${{ inputs.TERRAFORM_SERVICE_ACCOUNT }}
+          TOKEN_FORMAT: access_token
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          terraform init
+
+      - name: Terraform Override
+        working-directory: ${{ inputs.TERRAFORM_WORKING_DIR }}
+        run: |
+          terraform ${{ inputs.TERRAFORM_OVERRIDE }}
+          
