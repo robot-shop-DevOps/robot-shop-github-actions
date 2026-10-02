@@ -47,6 +47,9 @@ jobs:
       contents: read
       id-token: write
 
+    environment:
+      name: ${{ inputs.ENVIRONMENT }}
+
     steps:
       - name: Login to Google Artifact Registry with buildah
         uses: robot-shop-DevOps/robot-shop-github-actions/.github/actions/gcp/artifact-registry-login@gcp
