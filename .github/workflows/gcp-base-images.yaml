@@ -65,21 +65,33 @@ jobs:
           IMAGE="${{ inputs.IMAGE }}"
           REGISTRY="${{ inputs.REGISTRY }}"
 
-          if [[ "$REGISTRY" == "docker.io" || "$REGISTRY" == "quay.io" || "$REGISTRY" == "registry.k8s.io" ]]; then
+          if [[ "$REGISTRY" == "registry.k8s.io" ]]; then
+              FULL_IMAGE="${REGISTRY}/${IMAGE}"
+
+          elif [[ "$REGISTRY" == "docker.io" ]]; then
               if [[ "$IMAGE" == *"/"* ]]; then
                   FULL_IMAGE="${REGISTRY}/${IMAGE}"
               else
                   FULL_IMAGE="${REGISTRY}/library/${IMAGE}"
               fi
+
+          elif [[ "$REGISTRY" == "quay.io" ]]; then
+              if [[ "$IMAGE" == *"/"* ]]; then
+                  FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              else
+                  FULL_IMAGE="${REGISTRY}/repository/${IMAGE}"
+              fi
+
           else
               if [[ "$IMAGE" != *"/"* ]]; then
-                  echo "ERROR: Registry $REGISTRY requires explicit namespace for image '$IMAGE'."
+                  echo "ERROR: Custom registry $REGISTRY requires an explicit namespace for image '$IMAGE'."
                   exit 1
               fi
               FULL_IMAGE="${REGISTRY}/${IMAGE}"
           fi
 
           echo "FULL_IMAGE=$FULL_IMAGE" >> "$GITHUB_ENV"
+
 
       - name: Pull Image from Registry
         run: |
