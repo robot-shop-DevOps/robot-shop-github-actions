@@ -126,7 +126,7 @@ jobs:
 
       - name: Delete Local Images
         run: |
-          SOURCE_IMAGE="${{ inputs.SOURCE_IMAGE }}"
+          TARGET_IMAGE="${{ inputs.TARGET_IMAGE }}"
           SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
           TARGET_TAG="${{ inputs.TARGET_TAG }}"
 
