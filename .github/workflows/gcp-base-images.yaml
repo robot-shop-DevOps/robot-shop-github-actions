@@ -11,7 +11,11 @@ on:
         required: false
         type: string
 
-      IMAGE:
+      SOURCE_IMAGE:
+        required: true
+        type: string
+
+      TARGET_IMAGE:
         required: true
         type: string
 
@@ -62,32 +66,32 @@ jobs:
 
       - name: Generate full image
         run: |
-          IMAGE="${{ inputs.IMAGE }}"
+          SOURCE_IMAGE="${{ inputs.SOURCE_IMAGE }}"
           REGISTRY="${{ inputs.REGISTRY }}"
 
           if [[ "$REGISTRY" == "registry.k8s.io" ]]; then
-              FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              FULL_IMAGE="${REGISTRY}/${SOURCE_IMAGE}"
 
           elif [[ "$REGISTRY" == "docker.io" ]]; then
-              if [[ "$IMAGE" == *"/"* ]]; then
-                  FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              if [[ "$SOURCE_IMAGE" == *"/"* ]]; then
+                  FULL_IMAGE="${REGISTRY}/${SOURCE_IMAGE}"
               else
-                  FULL_IMAGE="${REGISTRY}/library/${IMAGE}"
+                  FULL_IMAGE="${REGISTRY}/library/${SOURCE_IMAGE}"
               fi
 
           elif [[ "$REGISTRY" == "quay.io" ]]; then
-              if [[ "$IMAGE" == *"/"* ]]; then
-                  FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              if [[ "$SOURCE_IMAGE" == *"/"* ]]; then
+                  FULL_IMAGE="${REGISTRY}/${SOURCE_IMAGE}"
               else
-                  FULL_IMAGE="${REGISTRY}/repository/${IMAGE}"
+                  FULL_IMAGE="${REGISTRY}/repository/${SOURCE_IMAGE}"
               fi
 
           else
-              if [[ "$IMAGE" != *"/"* ]]; then
-                  echo "ERROR: Custom registry $REGISTRY requires an explicit namespace for image '$IMAGE'."
+              if [[ "$SOURCE_IMAGE" != *"/"* ]]; then
+                  echo "ERROR: Custom registry $REGISTRY requires an explicit namespace for image '$SOURCE_IMAGE'."
                   exit 1
               fi
-              FULL_IMAGE="${REGISTRY}/${IMAGE}"
+              FULL_IMAGE="${REGISTRY}/${SOURCE_IMAGE}"
           fi
 
           echo "FULL_IMAGE=$FULL_IMAGE" >> "$GITHUB_ENV"
@@ -103,11 +107,11 @@ jobs:
 
       - name: Tag and push to Artifact Registry
         run: |
-          IMAGE="${{ inputs.IMAGE }}"
+          TARGET_IMAGE="${{ inputs.TARGET_IMAGE }}"
           SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
           TARGET_TAG="${{ inputs.TARGET_TAG }}"
 
-          GCP_IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${IMAGE}:${TARGET_TAG}"
+          GCP_IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${TARGET_IMAGE}:${TARGET_TAG}"
 
           echo "Retagging ${FULL_IMAGE}:${SOURCE_TAG}"
           echo "        -> ${GCP_IMAGE}"
@@ -122,11 +126,11 @@ jobs:
 
       - name: Delete Local Images
         run: |
-          IMAGE="${{ inputs.IMAGE }}"
+          SOURCE_IMAGE="${{ inputs.SOURCE_IMAGE }}"
           SOURCE_TAG="${{ inputs.SOURCE_TAG }}"
           TARGET_TAG="${{ inputs.TARGET_TAG }}"
 
-          GCP_IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${IMAGE}:${TARGET_TAG}"
+          GCP_IMAGE="${GCP_REGISTRY_URL}/${GCP_PROJECT}/${GCP_REPOSITORY}/${TARGET_IMAGE}:${TARGET_TAG}"
 
           echo "Deleting local images to free up space"
 
