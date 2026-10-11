@@ -18,7 +18,6 @@ inputs:
   TOKEN_FORMAT:
     description: Token format to generate
     required: false
-    default: access_token
 
   ID_TOKEN_AUDIENCE:
     description: Audience for the ID token
