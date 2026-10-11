@@ -24,6 +24,11 @@ inputs:
     description: Audience for the ID token
     required: false
 
+  CREATE_CREDENTIALS_FILE:
+    description: Whether to create a credentials file for gcloud
+    required: false
+    default: false
+
 outputs:
   AUTH_TOKEN:
     description: Generated Google authentication token
@@ -50,3 +55,4 @@ runs:
         service_account: ${{ inputs.SERVICE_ACCOUNT }}
         token_format: ${{ inputs.TOKEN_FORMAT }}
         id_token_audience: ${{ inputs.ID_TOKEN_AUDIENCE }}
+        create_credentials_file: ${{ inputs.CREATE_CREDENTIALS_FILE }}
