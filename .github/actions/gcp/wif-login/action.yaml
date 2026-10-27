@@ -26,7 +26,7 @@ inputs:
   CREATE_CREDENTIALS_FILE:
     description: Whether to create a credentials file for gcloud
     required: false
-    default: false
+    default: true
 
 outputs:
   AUTH_TOKEN:
